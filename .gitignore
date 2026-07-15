@@ -1,0 +1,27 @@
+# Local planning and submission material; never publish or track.
+plano/
+
+# Python environments and generated artifacts.
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+
+# LaTeX build products.
+paper/*.aux
+paper/*.bbl
+paper/*.blg
+paper/*.fdb_latexmk
+paper/*.fls
+paper/*.log
+paper/*.out
+paper/*.pdf
+paper/*.synctex.gz
+
+# Experiment-heavy or machine-local outputs.
+results/**/*.pt
+results/**/*.pth
+results/**/*.bin
+results/**/*.safetensors
+results/**/wandb/

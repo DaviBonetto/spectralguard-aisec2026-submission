@@ -1,0 +1,6 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite the associated SpectralGuard paper."
+title: "SpectralGuard"
+type: software
+version: 0.0.0
+date-released: 2026-07-15
