@@ -1,5 +1,6 @@
 import json
 import subprocess
+import tomllib
 from pathlib import Path
 
 import numpy as np
@@ -118,6 +119,19 @@ def test_exactly_two_clean_notebooks():
             if cell["cell_type"] == "code":
                 assert cell["execution_count"] is None
                 assert cell["outputs"] == []
+                lines = [
+                    line.strip()
+                    for line in "".join(cell["source"]).splitlines()
+                    if line.strip()
+                ]
+                assert lines[-1] == "print('Finished')"
+
+
+def test_lightning_python_and_torch_ranges_are_supported():
+    root = Path(__file__).parents[1]
+    project = tomllib.loads((root / "pyproject.toml").read_text(encoding="utf-8"))
+    assert project["project"]["requires-python"] == ">=3.11,<3.13"
+    assert "torch>=2.7,<2.9" in project["project"]["dependencies"]
 
 
 def test_mamba_spectral_collector_against_transformers_api():
@@ -219,9 +233,7 @@ def test_automatic_orchestrator_has_no_human_input(monkeypatch, tmp_path: Path):
     runtime = tmp_path / "runtime"
     (runtime / "manifests").mkdir(parents=True)
     isolated_paths = Phase3Paths(root=Path(__file__).parents[1], runtime=runtime)
-    monkeypatch.setattr(
-        runner, "_config_and_paths", lambda: (config, isolated_paths)
-    )
+    monkeypatch.setattr(runner, "_config_and_paths", lambda: (config, isolated_paths))
     calls = []
 
     def fake(name):
