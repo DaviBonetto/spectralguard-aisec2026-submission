@@ -1,10 +1,12 @@
 import json
+import subprocess
 from pathlib import Path
 
 import numpy as np
 import pytest
 
 from src.experiments.phase3_common import (
+    BudgetLedger,
     Phase3Paths,
     create_research_zip,
     load_phase3_config,
@@ -90,13 +92,27 @@ def test_export_rejects_weights_and_tokens(tmp_path: Path):
 
 
 def test_exactly_two_clean_notebooks():
-    notebooks = sorted((Path(__file__).parents[1] / "notebooks").glob("*.ipynb"))
-    assert [path.name for path in notebooks] == [
+    root = Path(__file__).parents[1]
+    tracked = subprocess.run(
+        ["git", "ls-files", "notebooks/*.ipynb"],
+        cwd=root,
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.splitlines()
+    assert [Path(path).name for path in tracked] == [
         "01_phase3_experiments.ipynb",
         "02_phase3_analysis.ipynb",
     ]
-    for notebook in notebooks:
-        payload = json.loads(notebook.read_text(encoding="utf-8"))
+    for notebook in tracked:
+        committed = subprocess.run(
+            ["git", "show", f"HEAD:{notebook}"],
+            cwd=root,
+            check=True,
+            capture_output=True,
+            text=True,
+        ).stdout
+        payload = json.loads(committed)
         assert payload["nbformat"] == 4
         for cell in payload["cells"]:
             if cell["cell_type"] == "code":
@@ -178,4 +194,90 @@ def test_gradient_attack_reaches_real_mamba_embeddings():
         "task_loss",
         "rho_mean",
         "hazard",
+    }
+
+
+def test_budget_ledger_counts_prior_kernel_sessions(tmp_path: Path):
+    paths = Phase3Paths(root=tmp_path, runtime=tmp_path)
+    (tmp_path / "manifests").mkdir()
+    ledger = BudgetLedger(paths, max_gpu_hours=1.0)
+    ledger.payload["events"] = [
+        {
+            "label": "prior-kernel",
+            "elapsed_seconds": 900.0,
+            "used_gpu": True,
+            "session_id": "different-session",
+        }
+    ]
+    assert ledger.remaining_hours() == pytest.approx(0.75)
+
+
+def test_automatic_orchestrator_has_no_human_input(monkeypatch, tmp_path: Path):
+    import src.experiments.phase3_runner as runner
+
+    config = load_phase3_config()
+    runtime = tmp_path / "runtime"
+    (runtime / "manifests").mkdir(parents=True)
+    isolated_paths = Phase3Paths(root=Path(__file__).parents[1], runtime=runtime)
+    monkeypatch.setattr(
+        runner, "_config_and_paths", lambda: (config, isolated_paths)
+    )
+    calls = []
+
+    def fake(name):
+        def execute(*args, **kwargs):
+            calls.append((name, args, kwargs))
+            return {"status": "PASS"}
+
+        return execute
+
+    monkeypatch.setattr(runner, "run_pre_gpu_automated_audit", fake("audit"))
+    monkeypatch.setattr(runner, "prepare_phase3", fake("prepare"))
+    monkeypatch.setattr(runner, "run_smoke_cell", fake("smoke"))
+    monkeypatch.setattr(runner, "run_precision_gate", fake("precision"))
+    monkeypatch.setattr(runner, "run_official_hispa_selection_cell", fake("hispa"))
+    monkeypatch.setattr(runner, "run_attack_optimization_cell", fake("attack"))
+    monkeypatch.setattr(runner, "run_model_cell", fake("model"))
+    monkeypatch.setattr(runner, "materialize_derived_experiment_cell", fake("derived"))
+    monkeypatch.setattr(runner, "fit_detector_cell", fake("detector"))
+    bundle = tmp_path / "phase3_experiments.zip"
+    bundle.write_bytes(b"zip")
+    monkeypatch.setattr(runner, "export_experiment_bundle", lambda: bundle)
+    report = runner.run_automatic_phase3()
+    assert report["status"] == "COMPLETE"
+    assert [call[0] for call in calls[:5]] == [
+        "audit",
+        "prepare",
+        "smoke",
+        "precision",
+        "hispa",
+    ]
+    assert sum(call[0] == "attack" for call in calls) == 4
+    expected_model_calls = 2 + sum(
+        item["id"] != "E04_adaptive" and not item.get("derived_from")
+        for item in config["experiments"]
+    )
+    assert sum(call[0] == "model" for call in calls) == expected_model_calls
+    assert sum(call[0] == "derived" for call in calls) == 1
+    assert "input(" not in Path(runner.__file__).read_text(encoding="utf-8")
+
+
+def test_reduced_experiments_are_task_stratified():
+    from src.experiments.phase3_runner import _rows_for_experiment
+
+    rows = [
+        {"prompt_id": f"{task}-{index}", "task": task, "split": "test"}
+        for task in ("associative_recall", "longbench_qasper", "gsm8k", "humaneval")
+        for index in range(100)
+    ]
+    selected = _rows_for_experiment(rows, {"id": "E05_transfer", "test_n": 200})
+    assert len(selected) == 200
+    assert {
+        task: sum(row["task"] == task for row in selected)
+        for task in {row["task"] for row in selected}
+    } == {
+        "associative_recall": 50,
+        "longbench_qasper": 50,
+        "gsm8k": 50,
+        "humaneval": 50,
     }

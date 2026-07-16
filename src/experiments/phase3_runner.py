@@ -8,6 +8,8 @@ from __future__ import annotations
 
 import json
 import random
+import subprocess
+import sys
 from pathlib import Path
 from typing import Any
 
@@ -74,6 +76,74 @@ def _config_and_paths() -> tuple[dict[str, Any], Phase3Paths]:
 
 def _checkpoint(config: dict[str, Any], paths: Phase3Paths) -> CheckpointStore:
     return CheckpointStore(paths, sha256_file(paths.root / "configs" / "phase3.yaml"))
+
+
+def run_pre_gpu_automated_audit() -> dict[str, Any]:
+    """Replace the former human input gate with executable, recorded checks."""
+    config, paths = _config_and_paths()
+    preflight_report = preflight(config, mode="dry_run")
+    commands = (
+        [sys.executable, "-m", "ruff", "check", "src", "tests"],
+        [sys.executable, "-m", "pytest", "-q"],
+    )
+    checks = []
+    for command in commands:
+        completed = subprocess.run(
+            command,
+            cwd=paths.root,
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+        checks.append(
+            {
+                "command": command,
+                "returncode": completed.returncode,
+                "stdout": completed.stdout[-4000:],
+                "stderr": completed.stderr[-4000:],
+            }
+        )
+        if completed.returncode:
+            raise RuntimeError(
+                f"automated pre-GPU audit failed: {' '.join(command)}\n"
+                f"{completed.stdout}\n{completed.stderr}"
+            )
+    expected = ["01_phase3_experiments.ipynb", "02_phase3_analysis.ipynb"]
+    tracked = subprocess.run(
+        ["git", "ls-files", "notebooks/*.ipynb"],
+        cwd=paths.root,
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.splitlines()
+    if [Path(path).name for path in tracked] != expected:
+        raise RuntimeError("automated audit requires exactly the two frozen notebooks")
+    for relative in tracked:
+        committed = subprocess.run(
+            ["git", "show", f"HEAD:{relative}"],
+            cwd=paths.root,
+            check=True,
+            capture_output=True,
+            text=True,
+        ).stdout
+        payload = json.loads(committed)
+        for cell in payload["cells"]:
+            if cell["cell_type"] == "code" and (
+                cell.get("execution_count") is not None or cell.get("outputs")
+            ):
+                raise RuntimeError(f"committed notebook is not clean: {relative}")
+    report = {
+        "schema_version": 1,
+        "status": "PASS",
+        "preflight": preflight_report,
+        "checks": checks,
+        "notebooks": expected,
+    }
+    output = atomic_write_json(
+        paths.child("manifests", "automated_pre_gpu_audit.json"), report
+    )
+    _checkpoint(config, paths).mark("automated-pre-gpu-audit", [output])
+    return report
 
 
 def prepare_phase3(
@@ -153,44 +223,59 @@ def run_official_hispa_selection_cell(*, confirmation: str) -> dict[str, Any]:
         int(config["attacks"]["gradient_guided"]["calibration_prompts"]),
     )
     spec = model_spec(config, "mamba_790m")
-    scores = []
-    with load_pinned_model(spec, dtype_name="bfloat16") as loaded:
-        candidates = official_attack_families(
-            paths,
-            count=int(
-                config["attacks"]["hispa_original"]["calibration_candidate_count"]
-            ),
-            tokenizer=loaded.tokenizer,
-        )
-        for candidate in candidates:
-            values = [
-                evaluate_prompt(
-                    loaded,
-                    row=row,
-                    condition=f"hispa_candidate_{candidate['candidate_id']}",
-                    trigger=candidate["text"],
-                    max_new_tokens=None,
-                    collect_spectrum=True,
-                )
-                for row in rows
-            ]
-            scores.append(
-                {
-                    **candidate,
-                    "calibration_n": len(values),
-                    "calibration_task_score": float(
-                        np.mean([item["task_score"] for item in values])
-                    ),
-                    "calibration_rho": float(
-                        np.mean(
-                            [
-                                item["spectral"]["rho_mean_over_layers"]
-                                for item in values
-                            ]
-                        )
-                    ),
-                }
+    progress = paths.child("raw", "official_hispa_selection_progress.jsonl")
+    scores = read_jsonl(progress) if progress.is_file() else []
+    completed_candidates = {item["candidate_id"] for item in scores}
+    candidate_count = int(
+        config["attacks"]["hispa_original"]["calibration_candidate_count"]
+    )
+    estimated_minutes = max(
+        2.0, 15.0 * (candidate_count - len(completed_candidates)) / candidate_count
+    )
+    ledger = BudgetLedger(paths, config["execution"]["max_gpu_hours_total"])
+    with ledger.measured(
+        "official-hispa-selection",
+        estimated_minutes=estimated_minutes,
+        used_gpu=True,
+    ):
+        with load_pinned_model(spec, dtype_name="bfloat16") as loaded:
+            candidates = official_attack_families(
+                paths,
+                count=candidate_count,
+                tokenizer=loaded.tokenizer,
             )
+            for candidate in candidates:
+                if candidate["candidate_id"] in completed_candidates:
+                    continue
+                values = [
+                    evaluate_prompt(
+                        loaded,
+                        row=row,
+                        condition=f"hispa_candidate_{candidate['candidate_id']}",
+                        trigger=candidate["text"],
+                        max_new_tokens=None,
+                        collect_spectrum=True,
+                    )
+                    for row in rows
+                ]
+                scores.append(
+                    {
+                        **candidate,
+                        "calibration_n": len(values),
+                        "calibration_task_score": float(
+                            np.mean([item["task_score"] for item in values])
+                        ),
+                        "calibration_rho": float(
+                            np.mean(
+                                [
+                                    item["spectral"]["rho_mean_over_layers"]
+                                    for item in values
+                                ]
+                            )
+                        ),
+                    }
+                )
+                atomic_write_jsonl(progress, scores)
     selected = min(
         scores,
         key=lambda item: (item["calibration_task_score"], item["calibration_rho"]),
@@ -203,7 +288,7 @@ def run_official_hispa_selection_cell(*, confirmation: str) -> dict[str, Any]:
         "candidates": scores,
     }
     atomic_write_json(output, payload)
-    _checkpoint(config, paths).mark("official-hispa-selection", [output])
+    _checkpoint(config, paths).mark("official-hispa-selection", [output, progress])
     return payload
 
 
@@ -252,10 +337,17 @@ def run_attack_optimization_cell(recipe: str, *, confirmation: str) -> dict[str,
         }[recipe]
         points = [{"name": recipe, **weights}]
         restarts = int(attack["restarts"])
-    records = []
+    progress = paths.child("raw", f"attack_{recipe}_progress.jsonl")
+    records = read_jsonl(progress) if progress.is_file() else []
+    completed_restarts = {
+        (item["tradeoff_point"], int(item["restart"])) for item in records
+    }
     spec = model_spec(config, "mamba_790m")
-    ledger = BudgetLedger(paths, config["execution"]["max_gpu_hours_per_session"])
-    estimate = 45 if recipe == "pareto" else 12
+    ledger = BudgetLedger(paths, config["execution"]["max_gpu_hours_total"])
+    full_estimate = 45 if recipe == "pareto" else 12
+    total_restarts = len(points) * restarts
+    remaining_restarts = total_restarts - len(completed_restarts)
+    estimate = max(2.0, full_estimate * remaining_restarts / total_restarts)
     with ledger.measured(f"attack-{recipe}", estimated_minutes=estimate, used_gpu=True):
         with load_pinned_model(spec, dtype_name="bfloat16") as loaded:
             for point in points:
@@ -265,6 +357,8 @@ def run_attack_optimization_cell(recipe: str, *, confirmation: str) -> dict[str,
                         "detector-aware Pareto point requires fit_detector_cell()"
                     )
                 for restart in range(restarts):
+                    if (point["name"], restart) in completed_restarts:
+                        continue
                     seed = int(config["seeds"][restart % len(config["seeds"])])
                     record = optimize_universal_trigger(
                         loaded,
@@ -286,6 +380,7 @@ def run_attack_optimization_cell(recipe: str, *, confirmation: str) -> dict[str,
                         }
                     )
                     records.append(record)
+                    atomic_write_jsonl(progress, records)
     best = min(records, key=lambda item: item["final_objective"])
     payload = {
         "schema_version": 1,
@@ -297,7 +392,7 @@ def run_attack_optimization_cell(recipe: str, *, confirmation: str) -> dict[str,
         "restarts": records,
     }
     atomic_write_json(output, payload)
-    _checkpoint(config, paths).mark(f"attack-{recipe}", [output])
+    _checkpoint(config, paths).mark(f"attack-{recipe}", [output, progress])
     return payload
 
 
@@ -313,7 +408,25 @@ def _experiment_spec(config: dict[str, Any], experiment_id: str) -> dict[str, An
 def _rows_for_experiment(
     rows: list[dict[str, Any]], experiment: dict[str, Any]
 ) -> list[dict[str, Any]]:
-    test = [row for row in rows if row["split"] == "test"][: int(experiment["test_n"])]
+    test_rows = [row for row in rows if row["split"] == "test"]
+    tasks = sorted({row["task"] for row in test_rows})
+    requested = int(experiment["test_n"])
+    test = []
+    while len(test) < requested:
+        progressed = False
+        for task in tasks:
+            candidates = [
+                row for row in test_rows if row["task"] == task and row not in test
+            ]
+            if candidates and len(test) < requested:
+                test.append(candidates[0])
+                progressed = True
+        if not progressed:
+            break
+    if len(test) != requested:
+        raise ValueError(
+            f"stratified test selection produced {len(test)} of {requested} rows"
+        )
     if experiment["id"] in {"E01_main_mamba", "E02_gpt2_control", "E04_adaptive"}:
         return [
             row for row in rows if row["split"] in {"calibration", "validation"}
@@ -353,23 +466,30 @@ def run_smoke_cell(*, confirmation: str) -> dict[str, Any]:
     ]
     trigger = official_attack_families(paths, count=1)[0]["text"]
     output = paths.child("raw", "smoke.jsonl")
+    if output.is_file() and len(read_jsonl(output)) == 4:
+        return {"status": "already_complete", "path": str(output), "rows": 4}
     values = []
-    with load_pinned_model(
-        model_spec(config, "mamba_130m"), dtype_name="bfloat16"
-    ) as loaded:
-        for row in rows:
-            for condition, text in {"clean": "", "hispa_original": trigger}.items():
-                values.append(
-                    evaluate_prompt(
-                        loaded,
-                        row=row,
-                        condition=condition,
-                        trigger=text,
-                        max_new_tokens=None,
-                        collect_spectrum=True,
-                        collect_boe=True,
+    ledger = BudgetLedger(paths, config["execution"]["max_gpu_hours_total"])
+    with ledger.measured("smoke", estimated_minutes=2, used_gpu=True):
+        with load_pinned_model(
+            model_spec(config, "mamba_130m"), dtype_name="bfloat16"
+        ) as loaded:
+            for row in rows:
+                for condition, text in {
+                    "clean": "",
+                    "hispa_original": trigger,
+                }.items():
+                    values.append(
+                        evaluate_prompt(
+                            loaded,
+                            row=row,
+                            condition=condition,
+                            trigger=text,
+                            max_new_tokens=None,
+                            collect_spectrum=True,
+                            collect_boe=True,
+                        )
                     )
-                )
     atomic_write_jsonl(output, values)
     _checkpoint(config, paths).mark("smoke", [output])
     return {"status": "complete", "path": str(output), "rows": len(values)}
@@ -388,9 +508,24 @@ def run_model_cell(experiment_id: str, *, confirmation: str) -> dict[str, Any]:
     completed = {(row["prompt_id"], row["condition"]) for row in existing}
     selected = list(existing)
     set_reproducible_seed(int(config["seeds"][0]))
-    ledger = BudgetLedger(paths, config["execution"]["max_gpu_hours_per_session"])
+    desired_conditions = set(conditions) | {"benign_control"}
+    expected_pairs = {
+        (row["prompt_id"], condition)
+        for row in rows
+        for condition in desired_conditions
+    }
+    if expected_pairs.issubset(completed):
+        return {
+            "status": "already_complete",
+            "path": str(output),
+            "rows": len(existing),
+            "sha256": sha256_file(output),
+        }
+    missing_fraction = len(expected_pairs - completed) / len(expected_pairs)
+    estimated_minutes = max(2.0, ESTIMATED_MINUTES[spec["key"]] * missing_fraction)
+    ledger = BudgetLedger(paths, config["execution"]["max_gpu_hours_total"])
     with ledger.measured(
-        experiment_id, estimated_minutes=ESTIMATED_MINUTES[spec["key"]], used_gpu=True
+        experiment_id, estimated_minutes=estimated_minutes, used_gpu=True
     ):
         with load_pinned_model(spec, dtype_name="bfloat16") as loaded:
             control = match_benign_control(
@@ -446,6 +581,51 @@ def run_model_cell(experiment_id: str, *, confirmation: str) -> dict[str, Any]:
     }
 
 
+def materialize_derived_experiment_cell(experiment_id: str) -> dict[str, Any]:
+    """Reuse an exact frozen subset from a larger completed experiment."""
+    config, paths = _config_and_paths()
+    experiment = _experiment_spec(config, experiment_id)
+    source_id = experiment.get("derived_from")
+    if not source_id:
+        raise ValueError(f"{experiment_id} is not declared as a derived experiment")
+    source = paths.child("raw", f"{source_id}.jsonl")
+    if not source.is_file():
+        raise FileNotFoundError(f"source experiment is incomplete: {source}")
+    selected_rows = _rows_for_experiment(load_frozen_dataset(paths), experiment)
+    selected_ids = {row["prompt_id"] for row in selected_rows}
+    source_rows = read_jsonl(source)
+    values = [
+        {**row, "derived_experiment_id": experiment_id, "derived_from": source_id}
+        for row in source_rows
+        if row["split"] == "test" and row["prompt_id"] in selected_ids
+    ]
+    conditions = {row["condition"] for row in values}
+    required_conditions = {
+        "clean",
+        "benign_control",
+        "hispa_original",
+        "gradient_guided",
+    }
+    if conditions != required_conditions:
+        raise RuntimeError(
+            f"derived source conditions drifted: {conditions} != {required_conditions}"
+        )
+    expected = len(selected_ids) * len(conditions)
+    if len(values) != expected or len(selected_ids) != int(experiment["test_n"]):
+        raise RuntimeError(
+            f"derived experiment is incomplete: {len(values)} rows, expected {expected}"
+        )
+    output = atomic_write_jsonl(paths.child("raw", f"{experiment_id}.jsonl"), values)
+    _checkpoint(config, paths).mark(experiment_id, [source, output])
+    return {
+        "status": "complete",
+        "path": str(output),
+        "rows": len(values),
+        "derived_from": source_id,
+        "gpu_seconds": 0,
+    }
+
+
 def fit_detector_cell() -> dict[str, Any]:
     """Fit five detectors with frozen calibration/validation/test separation."""
     config, paths = _config_and_paths()
@@ -498,13 +678,117 @@ def run_precision_gate(
     rows = [row for row in load_frozen_dataset(paths) if row["split"] == "calibration"][
         :2
     ]
-    payload = precision_probe(model_spec(config, model_key), rows, max_new_tokens=16)
-    output = atomic_write_json(
-        paths.child("manifests", f"precision-{model_key}.json"), payload
-    )
+    output = paths.child("manifests", f"precision-{model_key}.json")
+    if output.is_file():
+        existing = json.loads(output.read_text(encoding="utf-8"))
+        if existing.get("bf16_acceptable"):
+            return existing
+    ledger = BudgetLedger(paths, config["execution"]["max_gpu_hours_total"])
+    with ledger.measured("precision-gate", estimated_minutes=3, used_gpu=True):
+        payload = precision_probe(
+            model_spec(config, model_key), rows, max_new_tokens=16
+        )
+    atomic_write_json(output, payload)
     if not payload["bf16_acceptable"]:
         raise RuntimeError(f"BF16 precision gate failed; inspect {output}")
+    _checkpoint(config, paths).mark("precision-gate", [output])
     return payload
+
+
+def run_automatic_phase3() -> dict[str, Any]:
+    """Execute Notebook 1 end-to-end with fail-closed gates and safe resume."""
+    config, paths = _config_and_paths()
+    confirmation = str(config["execution"]["full_confirmation"])
+    report_path = paths.child("manifests", "automatic_phase3_run.json")
+    report: dict[str, Any] = {
+        "schema_version": 1,
+        "status": "RUNNING",
+        "stages": [],
+        "gpu_budget_hours_total": float(config["execution"]["max_gpu_hours_total"]),
+    }
+
+    def persist() -> None:
+        atomic_write_json(report_path, report)
+
+    def stage(name: str, function: Any, *args: Any, **kwargs: Any) -> Any:
+        print(f"\n=== {name} ===", flush=True)
+        try:
+            result = function(*args, **kwargs)
+        except Exception as exc:
+            report["status"] = "FAILED"
+            report["failed_stage"] = name
+            report["error"] = f"{type(exc).__name__}: {exc}"
+            persist()
+            raise
+        report["stages"].append({"name": name, "status": "PASS"})
+        persist()
+        return result
+
+    persist()
+    stage("automated_pre_gpu_audit", run_pre_gpu_automated_audit)
+    stage(
+        "frozen_assets_and_h100_preflight",
+        prepare_phase3,
+        mode="full",
+        confirmation=confirmation,
+        materialize_assets=True,
+    )
+    stage("smoke", run_smoke_cell, confirmation=confirmation)
+    stage("precision_gate", run_precision_gate, confirmation=confirmation)
+    stage(
+        "official_hispa_selection",
+        run_official_hispa_selection_cell,
+        confirmation=confirmation,
+    )
+    for recipe in ("gradient_guided", "adaptive_v2"):
+        stage(
+            f"attack_{recipe}",
+            run_attack_optimization_cell,
+            recipe,
+            confirmation=confirmation,
+        )
+    stage(
+        "E04_adaptive_pre_detector",
+        run_model_cell,
+        "E04_adaptive",
+        confirmation=confirmation,
+    )
+    stage("fit_detector", fit_detector_cell)
+    for recipe in ("adaptive_v3", "pareto"):
+        stage(
+            f"attack_{recipe}",
+            run_attack_optimization_cell,
+            recipe,
+            confirmation=confirmation,
+        )
+    stage(
+        "E04_adaptive_final", run_model_cell, "E04_adaptive", confirmation=confirmation
+    )
+    for experiment in config["experiments"]:
+        if experiment["id"] == "E04_adaptive":
+            continue
+        if experiment.get("derived_from"):
+            stage(
+                experiment["id"],
+                materialize_derived_experiment_cell,
+                experiment["id"],
+            )
+        else:
+            stage(
+                experiment["id"],
+                run_model_cell,
+                experiment["id"],
+                confirmation=confirmation,
+            )
+    report["status"] = "READY_FOR_EXPORT"
+    persist()
+    bundle = stage("export_experiment_bundle", export_experiment_bundle)
+    report["status"] = "COMPLETE"
+    report["experiments_zip"] = str(bundle)
+    report["next_notebook"] = "notebooks/02_phase3_analysis.ipynb"
+    persist()
+    print(f"\nCOMPLETE: download {bundle}", flush=True)
+    return report
 
 
 def export_experiment_bundle() -> Path:

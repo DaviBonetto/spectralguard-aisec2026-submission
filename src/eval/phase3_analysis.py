@@ -327,6 +327,7 @@ def analyze_phase3() -> dict[str, Any]:
             seed=int(seed),
             threshold_points=int(config["protocol"]["detector_threshold_grid_points"]),
             xgboost_params=official_params,
+            device="cpu",
         )
         clasp_rows.append(clasp_payload)
         clasp_predictions.append(clasp_prediction)
@@ -474,14 +475,23 @@ def analyze_phase3() -> dict[str, Any]:
     outputs["rho_accuracy_regression.csv"] = _save(
         paths, "rho_accuracy_regression.csv", pd.DataFrame(regressions)
     )
+    transfer_n = int(config["protocol"]["transfer_test_examples"])
+    per_task = transfer_n // len(config["dataset"]["task_splits"])
+    transfer_ids = set(
+        frame[(frame["model_key"] == "mamba_2_8b") & (frame["split"] == "test")]
+        .drop_duplicates("prompt_id")
+        .groupby("task", group_keys=False)
+        .head(per_task)["prompt_id"]
+    )
+    transfer_frame = frame[
+        frame["model_key"].isin({"mamba_1_4b", "mamba_2_8b", "pythia_1_4b"})
+        & frame["prompt_id"].isin(transfer_ids)
+    ]
+    transfer_metrics = _condition_metrics(transfer_frame, config)
     outputs["cross_model_transfer_wilson.csv"] = _save(
         paths,
         "cross_model_transfer_wilson.csv",
-        condition_metrics[
-            condition_metrics["model_key"].isin(
-                {"mamba_1_4b", "mamba_2_8b", "pythia_1_4b"}
-            )
-        ],
+        transfer_metrics,
     )
     outputs["hispa_head_to_head.csv"] = _save(
         paths,

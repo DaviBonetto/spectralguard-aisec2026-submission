@@ -11,7 +11,8 @@ execution:
   require_h100_for_full: true
   minimum_full_gpu_memory_gib: 75
   minimum_free_disk_gib: 80
-  max_gpu_hours_per_session: 4.75
+  max_gpu_hours_per_session: 7.0
+  max_gpu_hours_total: 7.0
   max_download_gib: 75
   checkpoint_every_examples: 10
   fail_on_nonfinite: true
@@ -149,7 +150,7 @@ experiments:
   - {id: E03_pythia_control, model: pythia_2_8b, test_n: 300}
   - {id: E04_adaptive, model: mamba_790m, test_n: 300}
   - {id: E05_transfer_mamba_1_4b, model: mamba_1_4b, test_n: 200}
-  - {id: E06_transfer_mamba_2_8b, model: mamba_2_8b, test_n: 200}
+  - {id: E06_transfer_mamba_2_8b, model: mamba_2_8b, test_n: 200, derived_from: E01_main_mamba}
   - {id: E07_transfer_pythia_1_4b, model: pythia_1_4b, test_n: 200}
   - {id: E08_zamba, model: zamba2_2_7b, test_n: 300}
 

@@ -15,4 +15,4 @@ state are excluded from both archives.
 `phase3_experiments.zip` is created only after every required full-model cell
 has completed. `phase3_final.zip` is created only after the split-aware analysis
 has run. Neither filename is evidence of scientific success by itself; the
-manifest, analysis gates, and Newton final audit determine closure.
+manifest and the executable 3.1--3.18 acceptance gates determine closure.

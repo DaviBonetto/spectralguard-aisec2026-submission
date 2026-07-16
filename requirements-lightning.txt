@@ -12,7 +12,9 @@ numpy==2.3.0
 pandas==2.3.0
 pyarrow==21.0.0
 psutil==7.1.0
+pytest==8.4.0
 PyYAML==6.0.2
+ruff==0.11.13
 safetensors==0.5.3
 scikit-learn==1.7.0
 scipy==1.16.2

@@ -71,8 +71,21 @@ def load_phase3_config(path: str | Path = "configs/phase3.yaml") -> dict[str, An
         raise ValueError("every model revision must be a 40-character SHA")
     if len(revisions) != len(set((m["id"], m["revision"]) for m in config["models"])):
         raise ValueError("duplicate model/revision entry")
+    experiments = {item["id"]: item for item in config["experiments"]}
+    for experiment in experiments.values():
+        source_id = experiment.get("derived_from")
+        if source_id:
+            if source_id not in experiments or source_id == experiment["id"]:
+                raise ValueError(f"invalid derived experiment source: {source_id}")
+            if experiments[source_id]["model"] != experiment["model"]:
+                raise ValueError("derived experiment must reuse the identical model")
     if int(config["attacks"]["gradient_guided"]["restarts"]) < 5:
         raise ValueError("gradient-guided attack requires at least five restarts")
+    execution = config["execution"]
+    if float(execution["max_gpu_hours_total"]) < float(
+        execution["max_gpu_hours_per_session"]
+    ):
+        raise ValueError("total GPU budget cannot be smaller than the session budget")
     if int(config["attacks"]["pareto"]["restarts_per_cell"]) < 5:
         raise ValueError("Pareto cells require at least five restarts")
     points = config["attacks"]["pareto"].get("tradeoff_points", [])
@@ -275,6 +288,7 @@ def preflight(
         ),
         "cost_guardrails": {
             "max_gpu_hours_per_session": execution["max_gpu_hours_per_session"],
+            "max_gpu_hours_total": execution["max_gpu_hours_total"],
             "max_download_gib": execution["max_download_gib"],
             "full_confirmation_required": mode == "full",
         },
@@ -284,7 +298,7 @@ def preflight(
 
 
 class BudgetLedger:
-    """Persistent wall-clock budget that fails before exceeding the declared cap."""
+    """Persistent total GPU budget that survives kernel/session restarts."""
 
     def __init__(self, paths: Phase3Paths, max_gpu_hours: float) -> None:
         self.path = paths.child("manifests", "budget.json")
@@ -302,7 +316,7 @@ class BudgetLedger:
         consumed = sum(
             event["elapsed_seconds"]
             for event in self.payload["events"]
-            if event.get("used_gpu") and event.get("session_id") == RUNTIME_SESSION_ID
+            if event.get("used_gpu")
         )
         return max(0.0, (self.max_seconds - consumed) / 3600.0)
 
