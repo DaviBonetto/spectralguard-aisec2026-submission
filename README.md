@@ -7,3 +7,7 @@ This repository is being prepared for anonymous review. Reproduction commands an
 ## Status
 
 The repository structure and reproducible environment are established in Phase 0. No unverified experimental result is claimed here.
+
+## Reproducibility policy
+
+Exact dependencies are recorded in `requirements.txt` and `uv.lock`. The initial seed, determinism, result-provenance, and model-revision requirements are defined in `configs/reproducibility.yaml`. Every experiment added after Phase 0 must reference a config and write its seed, package versions, model identifier, and immutable model revision into its result record.

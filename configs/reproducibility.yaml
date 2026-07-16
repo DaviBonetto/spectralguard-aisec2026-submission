@@ -1,0 +1,16 @@
+schema_version: 1
+
+determinism:
+  default_seed: 42
+  evaluation_seeds: [42, 123, 456, 789, 2026]
+  torch_deterministic_algorithms: true
+
+provenance:
+  require_seed_in_every_result: true
+  require_config_path_in_every_result: true
+  require_package_versions_in_every_result: true
+  require_model_id_in_every_result: true
+  require_model_revision_sha_in_every_result: true
+
+# Filled only when a model is first introduced. Floating revisions are forbidden.
+models: {}
