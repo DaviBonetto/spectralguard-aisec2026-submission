@@ -1,5 +1,6 @@
 # Local planning and submission material; never publish or track.
 plano/
+/AGENTS.md
 
 # Python environments and generated artifacts.
 .venv/

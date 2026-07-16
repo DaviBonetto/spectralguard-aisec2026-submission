@@ -22,9 +22,9 @@ IDENTITY_PATTERNS = (
     "Davi" + "Bonetto",
     "Davi" + " Bonetto",
     "Davi" + "b",
-    "davi.bonetto100" + "@gmail.com",
-    "github.com/" + "DaviBonetto",
-    "C:\\Users\\" + "Davib",
+    "davi" + ".bonetto100" + "@" + "gmail.com",
+    "github.com/" + "Davi" + "Bonetto",
+    "C:\\Users\\" + "Davi" + "b",
 )
 
 
