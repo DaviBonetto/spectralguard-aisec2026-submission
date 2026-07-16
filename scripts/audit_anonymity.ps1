@@ -1,0 +1,70 @@
+param(
+    [string]$Output = 'results/foundation/anonymity_audit.json'
+)
+
+$ErrorActionPreference = 'Stop'
+$repo = Resolve-Path (Join-Path $PSScriptRoot '..')
+Push-Location $repo
+try {
+    $blockedPatterns = @(
+        ('Da' + 'vi Bonetto'),
+        ('Da' + 'vib'),
+        ('davi' + '[.]bonetto'),
+        '@gmail[.]com'
+    )
+    $contentHits = @()
+    foreach ($file in @(git ls-files)) {
+        $path = Join-Path $repo $file
+        try {
+            $content = Get-Content -LiteralPath $path -Raw -Encoding UTF8 -ErrorAction Stop
+        }
+        catch { continue }
+        foreach ($pattern in $blockedPatterns) {
+            if ($content -match $pattern) {
+                $contentHits += "$file::$pattern"
+            }
+        }
+    }
+
+    $allowedAuthor = 'SpectralGuard Anonymous Authors <anonymous@invalid>'
+    $authors = @(git log --format='%an <%ae>' | Sort-Object -Unique)
+    $unexpectedAuthors = @($authors | Where-Object { $_ -ne $allowedAuthor })
+    $remotes = @(git remote -v)
+
+    $pdfMetadata = @{}
+    $pdfInfoCommand = Get-Command 'pdfinfo' -ErrorAction SilentlyContinue
+    if ((Test-Path 'paper/main.pdf') -and $pdfInfoCommand) {
+        $previousPreference = $ErrorActionPreference
+        $ErrorActionPreference = 'Continue'
+        $pdfInfoLines = @(& $pdfInfoCommand.Source (Resolve-Path 'paper/main.pdf') 2>$null)
+        $ErrorActionPreference = $previousPreference
+        foreach ($line in $pdfInfoLines) {
+            if ($line -match '^(Author|Creator|Producer|Title):\s*(.*)$') {
+                $pdfMetadata[$Matches[1]] = $Matches[2].Trim()
+            }
+        }
+    }
+    $pdfAuthor = [string]$pdfMetadata['Author']
+    $pdfAuthorSafe = [string]::IsNullOrWhiteSpace($pdfAuthor) -or $pdfAuthor -eq 'Anonymous'
+
+    $passed = ($contentHits.Count -eq 0) -and
+        ($unexpectedAuthors.Count -eq 0) -and $pdfAuthorSafe
+    $report = [ordered]@{
+        schema_version = 1
+        created_at_utc = [DateTime]::UtcNow.ToString('o')
+        tracked_content_hits = $contentHits
+        git_authors = $authors
+        unexpected_git_authors = $unexpectedAuthors
+        git_remotes = $remotes
+        pdf_metadata = $pdfMetadata
+        local_anonymity_passed = $passed
+        anonymous_external_repository_published = ($remotes.Count -gt 0)
+    }
+    $destination = Join-Path $repo $Output
+    New-Item -ItemType Directory -Force -Path (Split-Path $destination) | Out-Null
+    $report | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath $destination -Encoding UTF8
+    Write-Output $Output
+    if (-not $passed) { exit 1 }
+    exit 0
+}
+finally { Pop-Location }

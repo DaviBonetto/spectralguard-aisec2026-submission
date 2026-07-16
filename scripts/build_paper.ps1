@@ -3,9 +3,15 @@ $paper = Join-Path $PSScriptRoot '..\\paper'
 Push-Location $paper
 try {
     # MiKTeX's latexmk wrapper needs Perl, which is not installed on this host.
-    # Two direct pdflatex passes suffice while the Phase 0 bibliography is empty.
+    # Run the equivalent pdflatex -> bibtex -> pdflatex -> pdflatex sequence.
     & pdflatex -interaction=nonstopmode -halt-on-error main.tex
+    if ($LASTEXITCODE -ne 0) { throw 'Initial pdflatex pass failed.' }
+    & bibtex main
+    if ($LASTEXITCODE -ne 0) { throw 'BibTeX pass failed.' }
     & pdflatex -interaction=nonstopmode -halt-on-error main.tex
+    if ($LASTEXITCODE -ne 0) { throw 'Second pdflatex pass failed.' }
+    & pdflatex -interaction=nonstopmode -halt-on-error main.tex
+    if ($LASTEXITCODE -ne 0) { throw 'Final pdflatex pass failed.' }
     $pdf = Join-Path $paper 'main.pdf'
     if (-not (Test-Path $pdf)) { throw 'Paper PDF was not produced.' }
     # Count page objects directly so this works without a separate Poppler install.

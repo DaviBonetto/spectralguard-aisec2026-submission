@@ -34,13 +34,47 @@
 
 \section{Background and Related Work}
 
+Le Mercier, Develder, and Demeester introduced Hidden State Poisoning
+Attacks (HiSPAs), showing that short adversarial strings can corrupt the
+recurrent memory of Mamba-family models and evaluating the effect with the
+RoBench-25 benchmark \cite{lemercier2026hispa}.  Their latest arXiv revision
+also studies Mamba-2 and hybrid SSM--Transformer models.
+
+Concurrent work proposes CLASP, a token- and document-level detector trained
+with XGBoost over Mamba block-output embeddings (BOEs)
+\cite{lemercier2026clasp}.  CLASP is evaluated primarily on controlled
+injections into a resume corpus and explicitly leaves adaptive evasion and
+cross-domain validation open.  SpectralGuard instead investigates the
+dynamics of the discretized state-transition operator and a detector based on
+layer-wise spectral measurements.  Any empirical comparison between these
+approaches remains pending a common protocol in Phase~3; no superiority claim
+is made here.
+
 \section{Spectral Foundations and Theory}
+
+\paragraph{Condition-number convention.}
+We use $\kappa=\operatorname{cond}_2(V)$ for an eigenvector matrix $V$ that
+diagonalizes the state-transition operator; this is distinct from
+$\operatorname{cond}_2(A)$.  In the pinned Mamba-130M checkpoint, all 24
+continuous-time $A$ operators (and consequently $\exp(\Delta_t A)$) are real
+and diagonal.  Thus $V=I$ and $\kappa=1$ exactly.  A direct audit of revision
+\texttt{1e76775f628fbf1350fbe4dbb3d971ba64af25a1} confirms this structure.
+The legacy value $\kappa\approx3$ is unsupported and is not used in the
+revised analysis.
 
 \section{Threat Model and Attack Construction}
 
 \section{SpectralGuard Defense}
 
 \section{Experimental Methodology}
+
+\paragraph{Compute and model provenance.}
+Every model load must use an immutable revision SHA, and every run record must
+contain its seed, configuration hash, package versions, model identifier, and
+model revision.  The foundation audit used CPU inference only.  GPU-hours,
+hardware, wall-clock duration, and the corresponding carbon estimate will be
+aggregated from run manifests after the experiments are executed; no final
+compute or emissions value is claimed before then.
 
 \section{Results and Analysis}
 
@@ -53,8 +87,8 @@
 \section{Conclusion}
 % PENDING: depends on Phase 3.1 and Phase 7.
 
-\begin{thebibliography}{9}
-\end{thebibliography}
+\bibliographystyle{ACM-Reference-Format}
+\bibliography{references}
 
 \appendix
 \section{Open Science}

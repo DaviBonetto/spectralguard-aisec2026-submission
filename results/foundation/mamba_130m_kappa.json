@@ -1,0 +1,281 @@
+{
+  "A_log_sha256": "fc6ce3892302656ffe48f79f7906831ec0514ff70ce6faaa67b2646be9336e74",
+  "A_log_tensor_count": 24,
+  "A_matrix_condition_2_max": 96832399644.64499,
+  "A_matrix_condition_2_min": 1098030.0753463118,
+  "created_at_utc": "2026-07-16T02:28:56.913396+00:00",
+  "definition": "The theorem's kappa is cond_2(V), where V diagonalizes A. Mamba A and exp(delta*A) are real diagonal operators, so V=I and kappa=1 exactly.",
+  "eigenvector_condition_kappa_2": 1.0,
+  "global_abs_A_max": 283589262.6031651,
+  "global_abs_A_min": 2.1347289647868603e-06,
+  "layers": [
+    {
+      "A_matrix_condition_2": 319459759.73250514,
+      "abs_A_max": 291143.5079264783,
+      "abs_A_min": 0.0009113620700468282,
+      "eigenvector_condition_kappa_2": 1.0,
+      "parameter": "backbone.layers.0.mixer.A_log",
+      "shape": [
+        1536,
+        16
+      ]
+    },
+    {
+      "A_matrix_condition_2": 2329098.6544612735,
+      "abs_A_max": 102857.86502998279,
+      "abs_A_min": 0.0441620902716867,
+      "eigenvector_condition_kappa_2": 1.0,
+      "parameter": "backbone.layers.1.mixer.A_log",
+      "shape": [
+        1536,
+        16
+      ]
+    },
+    {
+      "A_matrix_condition_2": 12576287.521219319,
+      "abs_A_max": 306338.59508017875,
+      "abs_A_min": 0.024358428078501665,
+      "eigenvector_condition_kappa_2": 1.0,
+      "parameter": "backbone.layers.2.mixer.A_log",
+      "shape": [
+        1536,
+        16
+      ]
+    },
+    {
+      "A_matrix_condition_2": 12028406.057557298,
+      "abs_A_max": 317679.85212776385,
+      "abs_A_min": 0.026410802113565956,
+      "eigenvector_condition_kappa_2": 1.0,
+      "parameter": "backbone.layers.3.mixer.A_log",
+      "shape": [
+        1536,
+        16
+      ]
+    },
+    {
+      "A_matrix_condition_2": 5197321.950088429,
+      "abs_A_max": 150201.93611993708,
+      "abs_A_min": 0.028899871426549106,
+      "eigenvector_condition_kappa_2": 1.0,
+      "parameter": "backbone.layers.4.mixer.A_log",
+      "shape": [
+        1536,
+        16
+      ]
+    },
+    {
+      "A_matrix_condition_2": 24607013.239668768,
+      "abs_A_max": 617145.4379261136,
+      "abs_A_min": 0.02508006282254599,
+      "eigenvector_condition_kappa_2": 1.0,
+      "parameter": "backbone.layers.5.mixer.A_log",
+      "shape": [
+        1536,
+        16
+      ]
+    },
+    {
+      "A_matrix_condition_2": 1098030.0753463118,
+      "abs_A_max": 57305.01262318267,
+      "abs_A_min": 0.05218892807203759,
+      "eigenvector_condition_kappa_2": 1.0,
+      "parameter": "backbone.layers.6.mixer.A_log",
+      "shape": [
+        1536,
+        16
+      ]
+    },
+    {
+      "A_matrix_condition_2": 96832399644.64499,
+      "abs_A_max": 206710.92825124052,
+      "abs_A_min": 2.1347289647868603e-06,
+      "eigenvector_condition_kappa_2": 1.0,
+      "parameter": "backbone.layers.7.mixer.A_log",
+      "shape": [
+        1536,
+        16
+      ]
+    },
+    {
+      "A_matrix_condition_2": 29678730.43526274,
+      "abs_A_max": 1082982.4702885214,
+      "abs_A_min": 0.03649018857632055,
+      "eigenvector_condition_kappa_2": 1.0,
+      "parameter": "backbone.layers.8.mixer.A_log",
+      "shape": [
+        1536,
+        16
+      ]
+    },
+    {
+      "A_matrix_condition_2": 103836267.22308369,
+      "abs_A_max": 1182414.8873193872,
+      "abs_A_min": 0.011387301556007073,
+      "eigenvector_condition_kappa_2": 1.0,
+      "parameter": "backbone.layers.9.mixer.A_log",
+      "shape": [
+        1536,
+        16
+      ]
+    },
+    {
+      "A_matrix_condition_2": 10631010.050801678,
+      "abs_A_max": 277526.93941728893,
+      "abs_A_min": 0.026105415956817837,
+      "eigenvector_condition_kappa_2": 1.0,
+      "parameter": "backbone.layers.10.mixer.A_log",
+      "shape": [
+        1536,
+        16
+      ]
+    },
+    {
+      "A_matrix_condition_2": 39247012.8975427,
+      "abs_A_max": 701917.8781133448,
+      "abs_A_min": 0.017884619141481022,
+      "eigenvector_condition_kappa_2": 1.0,
+      "parameter": "backbone.layers.11.mixer.A_log",
+      "shape": [
+        1536,
+        16
+      ]
+    },
+    {
+      "A_matrix_condition_2": 4188386755.9927864,
+      "abs_A_max": 963117.0779905056,
+      "abs_A_min": 0.00022994941348538739,
+      "eigenvector_condition_kappa_2": 1.0,
+      "parameter": "backbone.layers.12.mixer.A_log",
+      "shape": [
+        1536,
+        16
+      ]
+    },
+    {
+      "A_matrix_condition_2": 1987102889.7450514,
+      "abs_A_max": 424066.4383920801,
+      "abs_A_min": 0.0002134094014862454,
+      "eigenvector_condition_kappa_2": 1.0,
+      "parameter": "backbone.layers.13.mixer.A_log",
+      "shape": [
+        1536,
+        16
+      ]
+    },
+    {
+      "A_matrix_condition_2": 51230174229.946045,
+      "abs_A_max": 1516690.71616858,
+      "abs_A_min": 2.9605417880504002e-05,
+      "eigenvector_condition_kappa_2": 1.0,
+      "parameter": "backbone.layers.14.mixer.A_log",
+      "shape": [
+        1536,
+        16
+      ]
+    },
+    {
+      "A_matrix_condition_2": 13669061628.771215,
+      "abs_A_max": 1040507.2445202831,
+      "abs_A_min": 7.612133683925893e-05,
+      "eigenvector_condition_kappa_2": 1.0,
+      "parameter": "backbone.layers.15.mixer.A_log",
+      "shape": [
+        1536,
+        16
+      ]
+    },
+    {
+      "A_matrix_condition_2": 11267978400.961061,
+      "abs_A_max": 283589262.6031651,
+      "abs_A_min": 0.02516771443038774,
+      "eigenvector_condition_kappa_2": 1.0,
+      "parameter": "backbone.layers.16.mixer.A_log",
+      "shape": [
+        1536,
+        16
+      ]
+    },
+    {
+      "A_matrix_condition_2": 25001212741.250725,
+      "abs_A_max": 6268392.752700197,
+      "abs_A_min": 0.00025072354759645993,
+      "eigenvector_condition_kappa_2": 1.0,
+      "parameter": "backbone.layers.17.mixer.A_log",
+      "shape": [
+        1536,
+        16
+      ]
+    },
+    {
+      "A_matrix_condition_2": 21934600.88828537,
+      "abs_A_max": 395125.64263570093,
+      "abs_A_min": 0.01801380588815391,
+      "eigenvector_condition_kappa_2": 1.0,
+      "parameter": "backbone.layers.18.mixer.A_log",
+      "shape": [
+        1536,
+        16
+      ]
+    },
+    {
+      "A_matrix_condition_2": 11941023.518853718,
+      "abs_A_max": 2234868.175540422,
+      "abs_A_min": 0.18715884547181252,
+      "eigenvector_condition_kappa_2": 1.0,
+      "parameter": "backbone.layers.19.mixer.A_log",
+      "shape": [
+        1536,
+        16
+      ]
+    },
+    {
+      "A_matrix_condition_2": 226676600.2477653,
+      "abs_A_max": 6136426.410141918,
+      "abs_A_min": 0.02707128306774759,
+      "eigenvector_condition_kappa_2": 1.0,
+      "parameter": "backbone.layers.20.mixer.A_log",
+      "shape": [
+        1536,
+        16
+      ]
+    },
+    {
+      "A_matrix_condition_2": 10725886.443774156,
+      "abs_A_max": 278687.8225951994,
+      "abs_A_min": 0.02598273103636705,
+      "eigenvector_condition_kappa_2": 1.0,
+      "parameter": "backbone.layers.21.mixer.A_log",
+      "shape": [
+        1536,
+        16
+      ]
+    },
+    {
+      "A_matrix_condition_2": 23268935.649794634,
+      "abs_A_max": 455331.0353062882,
+      "abs_A_min": 0.019568193498799197,
+      "eigenvector_condition_kappa_2": 1.0,
+      "parameter": "backbone.layers.22.mixer.A_log",
+      "shape": [
+        1536,
+        16
+      ]
+    },
+    {
+      "A_matrix_condition_2": 582988854.7202806,
+      "abs_A_max": 2016189.3313326538,
+      "abs_A_min": 0.0034583668538569674,
+      "eigenvector_condition_kappa_2": 1.0,
+      "parameter": "backbone.layers.23.mixer.A_log",
+      "shape": [
+        1536,
+        16
+      ]
+    }
+  ],
+  "model_id": "state-spaces/mamba-130m-hf",
+  "model_revision": "1e76775f628fbf1350fbe4dbb3d971ba64af25a1",
+  "parameter_count": 129135360,
+  "schema_version": 1
+}
