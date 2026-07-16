@@ -1,6 +1,11 @@
 schema_version: 1
 phase: 1
 
+anonymous_repository:
+  id: spectralguardaisec26
+  url: https://anonymous.4open.science/r/spectralguardaisec26/
+  status_url: https://anonymous.4open.science/status/spectralguardaisec26
+
 sources:
   spectralguard_legacy:
     arxiv_id: "2603.12414"

@@ -15,6 +15,7 @@ try {
     )
     $contentHits = @()
     foreach ($file in @(git ls-files)) {
+        if ($file.Replace('\', '/') -eq $Output.Replace('\', '/')) { continue }
         $path = Join-Path $repo $file
         try {
             $content = Get-Content -LiteralPath $path -Raw -Encoding UTF8 -ErrorAction Stop
@@ -30,7 +31,8 @@ try {
     $allowedAuthor = 'SpectralGuard Anonymous Authors <anonymous@invalid>'
     $authors = @(git log --format='%an <%ae>' | Sort-Object -Unique)
     $unexpectedAuthors = @($authors | Where-Object { $_ -ne $allowedAuthor })
-    $remotes = @(git remote -v)
+    # Record only neutral remote names; URLs may identify the repository owner.
+    $remotes = @(git remote | Sort-Object -Unique)
 
     $pdfMetadata = @{}
     $pdfInfoCommand = Get-Command 'pdfinfo' -ErrorAction SilentlyContinue
@@ -56,7 +58,7 @@ try {
         tracked_content_hits = $contentHits
         git_authors = $authors
         unexpected_git_authors = $unexpectedAuthors
-        git_remotes = $remotes
+        git_remote_names = $remotes
         pdf_metadata = $pdfMetadata
         local_anonymity_passed = $passed
         source_repository_configured = ($remotes.Count -gt 0)

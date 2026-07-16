@@ -23,6 +23,9 @@ try {
     & $python scripts\audit_clasp_artifact.py --output results\foundation\clasp_artifact_audit.json
     if ($LASTEXITCODE -ne 0) { throw "CLASP artifact audit failed." }
 
+    & $python scripts\audit_anonymous_repository.py --repo-id spectralguardaisec26 --output results\foundation\anonymous_repository_audit.json
+    if ($LASTEXITCODE -ne 0) { throw "Anonymous repository audit failed." }
+
     if (-not $SkipModelMeasurement) {
         & $python -m src.utils.measure_mamba_kappa --model-id state-spaces/mamba-130m-hf --revision $revision --output results\foundation\mamba_130m_kappa.json
         if ($LASTEXITCODE -ne 0) { throw "Model condition-number measurement failed." }

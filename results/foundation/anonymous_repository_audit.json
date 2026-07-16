@@ -1,0 +1,11 @@
+{
+  "created_at_utc": "2026-07-16T03:13:06.418401+00:00",
+  "file_count": 37,
+  "identity_hits": [],
+  "passed": true,
+  "planning_directory_exposed": false,
+  "public_api_base": "https://anonymous.4open.science/api/repo/spectralguardaisec26",
+  "repository_url": "https://anonymous.4open.science/r/spectralguardaisec26/",
+  "required_paths_missing": [],
+  "schema_version": 1
+}

@@ -2,6 +2,8 @@
 
 Research artifact for evaluating spectral monitoring against hidden-state poisoning attacks in state-space language models.
 
+Anonymous review mirror: https://anonymous.4open.science/r/spectralguardaisec26/
+
 This repository is being prepared for anonymous review. Reproduction commands and released artifacts will be added as the corresponding experiments are verified.
 
 ## Status
@@ -29,6 +31,7 @@ Phase 1 audit commands:
 ```powershell
 .\.venv\Scripts\python.exe scripts\audit_references.py --tex paper\main.tex --bib paper\references.bib --output results\foundation\reference_audit.json
 .\.venv\Scripts\python.exe scripts\audit_clasp_artifact.py --output results\foundation\clasp_artifact_audit.json
+.\.venv\Scripts\python.exe scripts\audit_anonymous_repository.py --repo-id spectralguardaisec26 --output results\foundation\anonymous_repository_audit.json
 .\.venv\Scripts\python.exe -m src.utils.measure_mamba_kappa --model-id state-spaces/mamba-130m-hf --revision 1e76775f628fbf1350fbe4dbb3d971ba64af25a1 --output results\foundation\mamba_130m_kappa.json
 .\.venv\Scripts\python.exe scripts\verify_foundation_result.py
 .\.venv\Scripts\python.exe -m pytest -q
