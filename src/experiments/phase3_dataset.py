@@ -20,6 +20,7 @@ from src.experiments.phase3_common import (
     atomic_write_jsonl,
     read_jsonl,
 )
+from src.experiments.phase3_prompts import split_attack_anchor
 from src.utils.provenance import sha256_file
 
 TEMPLATES = (
@@ -253,6 +254,8 @@ def validate_dataset(
     prompts = [row["clean_prompt"] for row in rows]
     if len(ids) != len(set(ids)) or len(prompts) != len(set(prompts)):
         raise ValueError("duplicate prompt ID or clean prompt")
+    for row in rows:
+        split_attack_anchor(row)
     counts = {
         task: {
             split: sum(row["task"] == task and row["split"] == split for row in rows)
@@ -273,6 +276,7 @@ def validate_dataset(
         "task_split_counts": counts,
         "unique_prompt_ids": len(set(ids)),
         "unique_prompts": len(set(prompts)),
+        "unique_attack_boundaries": len(rows),
     }
 
 

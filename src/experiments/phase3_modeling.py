@@ -13,24 +13,13 @@ from typing import Any, Iterator
 import numpy as np
 import torch
 
+from src.experiments.phase3_prompts import inject_trigger
 from src.experiments.phase3_scoring import normalize_code_answer, score_response
 
 
 def normalize_answer(text: str) -> str:
     """Normalize an exact-code answer without accepting arbitrary substrings."""
     return normalize_code_answer(text)
-
-
-def inject_trigger(row: dict[str, Any], trigger: str) -> str:
-    """Insert the condition immediately before the held-out question."""
-    prompt = str(row["clean_prompt"])
-    if not trigger:
-        return prompt
-    question = str(row["question"])
-    if prompt.count(question) != 1:
-        raise ValueError(f"question boundary is ambiguous for {row['prompt_id']}")
-    intervention = f"Intervening message:\n{trigger}\n\n{question}"
-    return prompt.replace(question, intervention, 1)
 
 
 def model_spec(config: dict[str, Any], key: str) -> dict[str, Any]:
@@ -61,6 +50,17 @@ class LoadedModel:
     dtype_name: str
 
 
+def require_mamba_fast_path() -> None:
+    """Fail closed instead of silently running the sequential Mamba backend."""
+    from transformers.models.mamba import modeling_mamba
+
+    if not modeling_mamba.is_fast_path_available:
+        raise RuntimeError(
+            "Mamba CUDA fast path is unavailable; run "
+            "scripts/install_lightning_mamba_kernels.py before using the H100"
+        )
+
+
 @contextmanager
 def load_pinned_model(
     spec: dict[str, Any],
@@ -73,6 +73,9 @@ def load_pinned_model(
             "model execution requires CUDA; use dry_run for CPU validation"
         )
     from transformers import AutoModelForCausalLM, AutoTokenizer
+
+    if spec["architecture"] == "mamba":
+        require_mamba_fast_path()
 
     token = os.environ.get("HF_TOKEN") or None
     tokenizer = AutoTokenizer.from_pretrained(

@@ -77,17 +77,29 @@ evidence checks, and anonymity audit) with:
 
 Phase 3 uses exactly two clean notebooks and a Git-ignored runtime directory:
 
-1. `notebooks/01_phase3_experiments.ipynb` performs dry-run validation, stops
-   for an independent pre-run audit, then runs one pinned model per
-   manually executed cell with atomic checkpoints and a 4.75 GPU-hour guard.
+1. `notebooks/01_phase3_experiments.ipynb` is a single `Run all` H100 workflow.
+   It verifies the exact Python 3.12/Torch 2.8/CUDA 12 environment, installs
+   hash-pinned official Mamba CUDA wheels, executes a fused-kernel smoke test,
+   audits all 1,500 prompt boundaries, and resumes atomic checkpoints under a
+   seven GPU-hour total guard.
 2. `notebooks/02_phase3_analysis.ipynb` applies the frozen split policy
    (calibration for fitting, validation for threshold selection, test for final
-   reporting), computes uncertainty, and creates the final archive.
+   reporting), computes uncertainty, and creates the final archive with one
+   CPU `Run all`.
 
 Before using Lightning credits, run the CPU-only local gate:
 
 ```powershell
 .\scripts\verify_phase3_preflight.ps1
+```
+
+On Lightning, install the frozen CUDA extensions while the H100 is off; the
+first notebook verifies them again with a real fused forward and cached
+generation after the H100 is enabled:
+
+```bash
+python -m pip install -q -r requirements-lightning.txt && \
+python scripts/install_lightning_mamba_kernels.py
 ```
 
 The two downloadable outputs are written to

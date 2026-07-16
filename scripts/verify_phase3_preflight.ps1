@@ -9,7 +9,7 @@ if (-not (Test-Path -LiteralPath $python)) {
 
 Push-Location $root
 try {
-    & $python -m ruff check src tests
+    & $python -m ruff check src scripts tests
     if ($LASTEXITCODE -ne 0) { throw "ruff failed" }
 
     & $python -m pytest -q

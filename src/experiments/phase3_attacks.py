@@ -13,6 +13,7 @@ import numpy as np
 import torch
 
 from src.experiments.phase3_common import Phase3Paths
+from src.experiments.phase3_prompts import split_attack_anchor
 
 
 def load_official_trigger_pool(paths: Phase3Paths) -> list[dict[str, Any]]:
@@ -242,11 +243,7 @@ def _target_text(row: dict[str, Any]) -> str:
 
 
 def _attack_parts(tokenizer: Any, row: dict[str, Any], trigger_ids: list[int]):
-    prompt = str(row["clean_prompt"])
-    anchor = str(row["question"])
-    if prompt.count(anchor) != 1:
-        raise ValueError(f"ambiguous attack anchor for {row['prompt_id']}")
-    prefix, suffix = prompt.split(anchor, 1)
+    prefix, anchor, suffix = split_attack_anchor(row)
     prefix_ids = _token_ids(tokenizer, prefix)
     suffix_ids = _token_ids(tokenizer, anchor + suffix)
     target_ids = _token_ids(tokenizer, _target_text(row))

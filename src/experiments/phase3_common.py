@@ -260,6 +260,33 @@ def preflight(
                 f"GiB; detected {gpu_memory_gib:.1f} GiB"
             )
 
+    optional_packages = package_versions(
+        (
+            "datasets",
+            "causal-conv1d",
+            "huggingface-hub",
+            "mamba-ssm",
+            "matplotlib",
+            "pyarrow",
+            "scipy",
+            "statsmodels",
+        )
+    )
+    if mode == "full":
+        expected_kernels = {
+            "causal-conv1d": "1.6.2.post1+cu12torch2.8cxx11abitrue",
+            "mamba-ssm": "2.3.2.post1+cu12torch2.8cxx11abitrue",
+        }
+        observed_kernels = {
+            name: value.lower() if value is not None else None
+            for name, value in optional_packages.items()
+            if name in expected_kernels
+        }
+        if observed_kernels != expected_kernels:
+            raise RuntimeError(
+                f"frozen Mamba CUDA kernels are missing or drifted: {observed_kernels}"
+            )
+
     report = {
         "schema_version": 1,
         "mode": mode,
@@ -276,16 +303,7 @@ def preflight(
         "bf16_supported": bf16_supported,
         "free_disk_gib": free_disk_gib,
         "hf_token_present": bool(os.environ.get("HF_TOKEN")),
-        "optional_packages": package_versions(
-            (
-                "datasets",
-                "huggingface-hub",
-                "matplotlib",
-                "pyarrow",
-                "scipy",
-                "statsmodels",
-            )
-        ),
+        "optional_packages": optional_packages,
         "cost_guardrails": {
             "max_gpu_hours_per_session": execution["max_gpu_hours_per_session"],
             "max_gpu_hours_total": execution["max_gpu_hours_total"],
