@@ -9,6 +9,7 @@ __pycache__/
 .pytest_cache/
 .ruff_cache/
 .mypy_cache/
+.ipynb_checkpoints/
 .coverage
 htmlcov/
 .DS_Store
@@ -36,3 +37,9 @@ results/**/*.pth
 results/**/*.bin
 results/**/*.safetensors
 results/**/wandb/
+
+# Lightning AI Phase 3 runtime workspace. The tracked README documents the
+# layout; all generated datasets, checkpoints, logs, model caches, and ZIPs
+# remain local and are transferred explicitly by the researcher.
+Experiments/*
+!Experiments/README.md

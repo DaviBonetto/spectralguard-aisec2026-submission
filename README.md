@@ -72,3 +72,26 @@ evidence checks, and anonymity audit) with:
 ```powershell
 .\scripts\verify_phase2.ps1
 ```
+
+## Phase 3 Lightning AI protocol
+
+Phase 3 uses exactly two clean notebooks and a Git-ignored runtime directory:
+
+1. `notebooks/01_phase3_experiments.ipynb` performs dry-run validation, stops
+   for an independent pre-run audit, then runs one pinned model per
+   manually executed cell with atomic checkpoints and a 4.75 GPU-hour guard.
+2. `notebooks/02_phase3_analysis.ipynb` applies the frozen split policy
+   (calibration for fitting, validation for threshold selection, test for final
+   reporting), computes uncertainty, and creates the final archive.
+
+Before using Lightning credits, run the CPU-only local gate:
+
+```powershell
+.\scripts\verify_phase3_preflight.ps1
+```
+
+The two downloadable outputs are written to
+`Experiments/exports/phase3_experiments.zip` and
+`Experiments/exports/phase3_final.zip`. Model weights, credentials, notebook
+outputs, and partial caches are never included. Phase 3 is not declared closed
+until the real H100 outputs and both ZIPs pass the final independent audit.
