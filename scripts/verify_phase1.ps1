@@ -28,6 +28,9 @@ try {
         if ($LASTEXITCODE -ne 0) { throw "Model condition-number measurement failed." }
     }
 
+    & $python scripts\verify_foundation_result.py
+    if ($LASTEXITCODE -ne 0) { throw "Foundation result verification failed." }
+
     & scripts\build_paper.ps1
     if ($LASTEXITCODE -ne 0) { throw "Paper build failed." }
 

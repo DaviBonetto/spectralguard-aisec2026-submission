@@ -8,6 +8,18 @@ This repository is being prepared for anonymous review. Reproduction commands an
 
 The repository structure and reproducible environment are established in Phase 0. No unverified experimental result is claimed here.
 
+## Phase 1 quickstart
+
+The current reproducible foundation result is the resolution of the legacy condition-number contradiction. It is a structural checkpoint audit, not a defense-effectiveness result:
+
+```powershell
+uv sync --locked
+.\.venv\Scripts\python.exe -m src.utils.measure_mamba_kappa --model-id state-spaces/mamba-130m-hf --revision 1e76775f628fbf1350fbe4dbb3d971ba64af25a1 --output results\foundation\mamba_130m_kappa.json
+.\.venv\Scripts\python.exe scripts\verify_foundation_result.py
+```
+
+Expected output: `PASS: kappa_2(V)=1.0 for all 24 layers at the pinned revision.`
+
 ## Reproducibility policy
 
 Exact dependencies are recorded in `requirements.txt` and `uv.lock`. The initial seed, determinism, result-provenance, and model-revision requirements are defined in `configs/reproducibility.yaml`. Every experiment added after Phase 0 must reference a config and write its seed, package versions, model identifier, and immutable model revision into its result record.
@@ -18,6 +30,7 @@ Phase 1 audit commands:
 .\.venv\Scripts\python.exe scripts\audit_references.py --tex paper\main.tex --bib paper\references.bib --output results\foundation\reference_audit.json
 .\.venv\Scripts\python.exe scripts\audit_clasp_artifact.py --output results\foundation\clasp_artifact_audit.json
 .\.venv\Scripts\python.exe -m src.utils.measure_mamba_kappa --model-id state-spaces/mamba-130m-hf --revision 1e76775f628fbf1350fbe4dbb3d971ba64af25a1 --output results\foundation\mamba_130m_kappa.json
+.\.venv\Scripts\python.exe scripts\verify_foundation_result.py
 .\.venv\Scripts\python.exe -m pytest -q
 .\scripts\audit_anonymity.ps1
 .\scripts\build_paper.ps1

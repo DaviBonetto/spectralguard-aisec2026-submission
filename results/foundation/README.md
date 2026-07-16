@@ -7,6 +7,6 @@ This directory contains machine-generated, lightweight evidence only:
 - `anonymity_audit.json` is produced by `scripts/audit_anonymity.ps1` and checks tracked content, Git authors, remotes, and PDF author metadata.
 - `legacy_reference_inventory.json` is produced by `scripts/audit_legacy_tex.py` from the official arXiv source and records every orphaned legacy reference.
 - `clasp_artifact_audit.json` is produced by `scripts/audit_clasp_artifact.py` and verifies the public anonymous CLASP artifact endpoint and essential files.
-- `docker_validation.json` records the final image identifier, pinned base-image digest, and containerized test result from `scripts/verify_phase1.ps1`.
+- `docker_validation.json` records an observed build identifier, the pinned base-image digest, and the containerized test result. The image identifier is informational because BuildKit manifest metadata may vary across rebuilds.
 
 No historical headline metric is imported into this directory.

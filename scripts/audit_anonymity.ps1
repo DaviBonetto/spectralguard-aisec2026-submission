@@ -1,5 +1,6 @@
 param(
-    [string]$Output = 'results/foundation/anonymity_audit.json'
+    [string]$Output = 'results/foundation/anonymity_audit.json',
+    [string]$AnonymousRepositoryUrl = ''
 )
 
 $ErrorActionPreference = 'Stop'
@@ -58,7 +59,9 @@ try {
         git_remotes = $remotes
         pdf_metadata = $pdfMetadata
         local_anonymity_passed = $passed
-        anonymous_external_repository_published = ($remotes.Count -gt 0)
+        source_repository_configured = ($remotes.Count -gt 0)
+        anonymous_repository_url = $AnonymousRepositoryUrl
+        anonymous_external_repository_published = ($AnonymousRepositoryUrl -match '^https://anonymous[.]4open[.]science/r/[A-Za-z0-9-]+/?$')
     }
     $destination = Join-Path $repo $Output
     New-Item -ItemType Directory -Force -Path (Split-Path $destination) | Out-Null
