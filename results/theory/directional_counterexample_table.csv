@@ -1,0 +1,3 @@
+attack_family,n,attack_successes,attack_success_rate,monitor_detections,monitor_detection_rate,attack_success_wilson_95,monitor_detection_wilson_95
+spectral_collapse_control,1000,1000,1.0,1000,1.0,"[0.996173241514445, 1.0]","[0.996173241514445, 1.0]"
+directional_readout_counterexample,1000,1000,1.0,0,0.0,"[0.996173241514445, 1.0]","[0.0, 0.0038267584855551234]"

@@ -1,0 +1,14 @@
+schema_version: 1
+phase: 2
+seed: 42
+model:
+  id: state-spaces/mamba-130m-hf
+  revision: 1e76775f628fbf1350fbe4dbb3d971ba64af25a1
+inputs:
+  foundation_measurement: results/foundation/mamba_130m_kappa.json
+legacy_horizon_claims:
+  benign_rho: 0.98
+  benign_horizon: 1170000
+  attacked_rho: 0.32
+  attacked_horizon: 45
+output: results/theory/phase2_theory_audit.json

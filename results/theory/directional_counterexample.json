@@ -1,0 +1,72 @@
+{
+  "architecture_evidence": "results/foundation/mamba_130m_kappa.json",
+  "architecture_evidence_sha256": "474437f75485b7cd19136159a049eb32100fcd0ab1184cd5b119a782a30bbd5b",
+  "config_path": "configs/phase2_directional.yaml",
+  "config_sha256": "0068218c94a1fe63f82c14360c81363e00f7fc74bd31c2082e1f15da5645b0a0",
+  "construction": {
+    "dimension": 64,
+    "horizon": 64,
+    "max_absolute_directional_rho_change": 0.0,
+    "max_absolute_readout_norm_change": 0.0,
+    "readout_C_unit_norm_before_and_after": true,
+    "rho_monitor_threshold": 0.9,
+    "task_output_drop_threshold": 0.9,
+    "transition_A_held_exactly_fixed_for_directional_family": true
+  },
+  "eigenvector_rotation_applicable_to_diagonal_A": false,
+  "experiment": "phase2_directional_counterexample",
+  "limitations": [
+    "The witness operates on model parameters, not discrete token strings.",
+    "Input-conditioned reachability of the constructed C direction is not assumed or proved.",
+    "The result falsifies unconditional radius-only completeness but does not estimate natural-world attack prevalence."
+  ],
+  "model_id": "state-spaces/mamba-130m-hf",
+  "model_revision": "1e76775f628fbf1350fbe4dbb3d971ba64af25a1",
+  "package_versions": {
+    "PyYAML": "6.0.2",
+    "accelerate": "1.7.0",
+    "numpy": "2.3.0",
+    "pandas": "2.3.0",
+    "safetensors": "0.5.3",
+    "scikit-learn": "1.7.0",
+    "torch": "2.7.1",
+    "transformers": "4.52.4"
+  },
+  "results": [
+    {
+      "attack_family": "spectral_collapse_control",
+      "attack_success_rate": 1.0,
+      "attack_success_wilson_95": [
+        0.996173241514445,
+        1.0
+      ],
+      "attack_successes": 1000,
+      "monitor_detection_rate": 1.0,
+      "monitor_detection_wilson_95": [
+        0.996173241514445,
+        1.0
+      ],
+      "monitor_detections": 1000,
+      "n": 1000
+    },
+    {
+      "attack_family": "directional_readout_counterexample",
+      "attack_success_rate": 1.0,
+      "attack_success_wilson_95": [
+        0.996173241514445,
+        1.0
+      ],
+      "attack_successes": 1000,
+      "monitor_detection_rate": 0.0,
+      "monitor_detection_wilson_95": [
+        0.0,
+        0.0038267584855551234
+      ],
+      "monitor_detections": 0,
+      "n": 1000
+    }
+  ],
+  "schema_version": 1,
+  "scope": "seeded model-level structural counterexample; not a token-reachability claim",
+  "seed": 42
+}

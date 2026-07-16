@@ -48,3 +48,22 @@ The complete local gate, including a clean Docker build and containerized tests,
 The legacy-reference inventory is generated from the official `2603.12414v1` arXiv source by passing its extracted `main.tex` to `scripts/audit_legacy_tex.py`; the historical source itself is intentionally not copied into this anonymous repository.
 
 The generated evidence is documented in `results/foundation/README.md`. The Docker image runs the test suite by default.
+
+Phase 2 deterministic theory audit:
+
+```powershell
+.\.venv\Scripts\python.exe -m src.eval.phase2_theory_audit --config configs\phase2_theory.yaml
+.\.venv\Scripts\python.exe -m src.attacks.directional_counterexample --config configs\phase2_directional.yaml
+```
+
+The second command is a seeded, model-level counterexample to unconditional
+radius-monitor completeness. It does not claim that the constructed readout
+rotation is reachable from discrete tokens in the pinned checkpoint. Generated
+evidence and its exact scope are documented in `results/theory/README.md`.
+
+Run the complete Phase 2 gate (regeneration, lint, tests, paper build,
+evidence checks, and anonymity audit) with:
+
+```powershell
+.\scripts\verify_phase2.ps1
+```
