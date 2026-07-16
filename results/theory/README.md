@@ -1,8 +1,10 @@
 # Phase 2 theory evidence
 
-This directory contains deterministic evidence for the theoretical-surgery
-phase. `phase2_theory_audit.json` records the corrected horizon arithmetic and
-the exact layerwise continuous-time diagonal-operator norms from the pinned
+This directory contains reproducible evidence for the theoretical-surgery
+phase. The two core experiment outputs are deterministic;
+`anonymity_audit.json` is a timestamped operational audit.
+`phase2_theory_audit.json` records the corrected horizon arithmetic and the
+exact layerwise continuous-time diagonal-operator norms from the pinned
 Mamba-130M audit.
 
 `directional_counterexample.json` and

@@ -57,7 +57,13 @@ def main() -> None:
     assert counterexample["monitor_detection_rate"] == 0.0
     assert counterexample["monitor_detection_wilson_95"][1] < 0.004
 
-    log = Path("paper/main.log").read_text(encoding="utf-8", errors="replace")
+    paper_log = Path("paper/main.log")
+    if not paper_log.is_file():
+        raise SystemExit(
+            "paper/main.log is missing; run scripts/build_paper.ps1 before "
+            "this verifier (or use scripts/verify_phase2.ps1)."
+        )
+    log = paper_log.read_text(encoding="utf-8", errors="replace")
     assert "Overfull" not in log
     assert "undefined references" not in log.lower()
     assert "undefined citations" not in log.lower()

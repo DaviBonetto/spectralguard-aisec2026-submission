@@ -8,7 +8,12 @@ This repository is being prepared for anonymous review. Reproduction commands an
 
 ## Status
 
-The repository structure and reproducible environment are established in Phase 0. No unverified experimental result is claimed here.
+Phases 0--2 are complete: the repository and environment are reproducible,
+the checkpoint foundations have been audited, and the theoretical claims have
+been repaired and independently verified. The released Phase 2 result is a
+structural counterexample with an explicit model-level scope; no unverified
+defense-effectiveness or token-level attack result is claimed. Phase 3 rebuilds
+the empirical evidence from clean protocols.
 
 ## Phase 1 quickstart
 

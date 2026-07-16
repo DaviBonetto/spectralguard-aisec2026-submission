@@ -8,6 +8,11 @@ __pycache__/
 *.py[cod]
 .pytest_cache/
 .ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+.DS_Store
+Thumbs.db
 
 # LaTeX build products.
 paper/*.aux
@@ -18,6 +23,11 @@ paper/*.fls
 paper/*.log
 paper/*.out
 paper/*.pdf
+paper/*.toc
+paper/*.lof
+paper/*.lot
+paper/*.bcf
+paper/*.run.xml
 paper/*.synctex.gz
 
 # Experiment-heavy or machine-local outputs.
