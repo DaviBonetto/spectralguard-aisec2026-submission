@@ -51,21 +51,41 @@ def load_phase3_config(path: str | Path = "configs/phase3.yaml") -> dict[str, An
     if not config_path.is_absolute():
         config_path = repository_root() / config_path
     config = yaml.safe_load(config_path.read_text(encoding="utf-8"))
-    if config.get("schema_version") != 1 or config.get("phase") != 3:
-        raise ValueError("not a Phase 3 schema-v1 configuration")
+    if config.get("schema_version") != 2 or config.get("phase") != 3:
+        raise ValueError("not a Phase 3 schema-v2 configuration")
     seeds = config.get("seeds", [])
     if len(seeds) != 5 or len(set(seeds)) != 5:
         raise ValueError("Phase 3 requires exactly five distinct seeds")
     dataset = config["dataset"]
-    if int(dataset["calibration_examples"]) + int(dataset["validation_examples"]) + int(
-        dataset["test_examples"]
-    ) != int(dataset["total_examples"]):
+    split_totals = {key: int(value) for key, value in dataset["split_totals"].items()}
+    if sum(split_totals.values()) != int(dataset["total_examples"]):
         raise ValueError("dataset split counts do not sum to total_examples")
+    task_totals = {
+        split: sum(int(counts[split]) for counts in dataset["task_splits"].values())
+        for split in split_totals
+    }
+    if task_totals != split_totals:
+        raise ValueError(f"task split totals drifted: {task_totals} != {split_totals}")
     revisions = [model["revision"] for model in config["models"]]
     if any(len(revision) != 40 for revision in revisions):
         raise ValueError("every model revision must be a 40-character SHA")
     if len(revisions) != len(set((m["id"], m["revision"]) for m in config["models"])):
         raise ValueError("duplicate model/revision entry")
+    if int(config["attacks"]["gradient_guided"]["restarts"]) < 5:
+        raise ValueError("gradient-guided attack requires at least five restarts")
+    if int(config["attacks"]["pareto"]["restarts_per_cell"]) < 5:
+        raise ValueError("Pareto cells require at least five restarts")
+    points = config["attacks"]["pareto"].get("tradeoff_points", [])
+    if len(points) != 5 or len({point["name"] for point in points}) != 5:
+        raise ValueError(
+            "Pareto protocol requires five uniquely named trade-off points"
+        )
+    for artifact in ("official_hispa", "official_clasp"):
+        source = dataset[artifact]
+        if set(source["required_paths"]) != set(source["expected_sha256"]):
+            raise ValueError(f"{artifact} path/hash registry drifted")
+        if any(len(value) != 64 for value in source["expected_sha256"].values()):
+            raise ValueError(f"{artifact} contains an invalid SHA-256")
     return config
 
 
@@ -254,7 +274,7 @@ def preflight(
             )
         ),
         "cost_guardrails": {
-            "max_gpu_hours": execution["max_gpu_hours"],
+            "max_gpu_hours_per_session": execution["max_gpu_hours_per_session"],
             "max_download_gib": execution["max_download_gib"],
             "full_confirmation_required": mode == "full",
         },

@@ -5,7 +5,6 @@ from __future__ import annotations
 import gc
 import math
 import os
-import re
 import time
 from contextlib import contextmanager
 from dataclasses import dataclass
@@ -14,11 +13,12 @@ from typing import Any, Iterator
 import numpy as np
 import torch
 
+from src.experiments.phase3_scoring import normalize_code_answer, score_response
+
 
 def normalize_answer(text: str) -> str:
     """Normalize an exact-code answer without accepting arbitrary substrings."""
-    match = re.search(r"\b([A-Z]{3,10}-\d{3})\b", text.upper())
-    return match.group(1) if match else ""
+    return normalize_code_answer(text)
 
 
 def inject_trigger(row: dict[str, Any], trigger: str) -> str:
@@ -80,6 +80,9 @@ def load_pinned_model(
     )
     if tokenizer.pad_token_id is None:
         tokenizer.pad_token = tokenizer.eos_token
+    model_kwargs = {}
+    if spec["architecture"] == "transformer":
+        model_kwargs["attn_implementation"] = "eager"
     model = AutoModelForCausalLM.from_pretrained(
         spec["id"],
         revision=spec["revision"],
@@ -88,6 +91,7 @@ def load_pinned_model(
         low_cpu_mem_usage=True,
         trust_remote_code=False,
         token=token,
+        **model_kwargs,
     )
     model.eval()
     loaded = LoadedModel(
@@ -223,9 +227,57 @@ class MambaSpectralCollector:
         }
 
 
-def _tokenize(loaded: LoadedModel, prompt: str) -> dict[str, torch.Tensor]:
-    encoded = loaded.tokenizer(prompt, return_tensors="pt", truncation=False)
+def _tokenize(
+    loaded: LoadedModel, prompt: str, max_input_tokens: int = 768
+) -> dict[str, torch.Tensor]:
+    original_side = loaded.tokenizer.truncation_side
+    loaded.tokenizer.truncation_side = "left"
+    try:
+        encoded = loaded.tokenizer(
+            prompt,
+            return_tensors="pt",
+            truncation=True,
+            max_length=int(max_input_tokens),
+        )
+    finally:
+        loaded.tokenizer.truncation_side = original_side
     return {key: value.to(loaded.device) for key, value in encoded.items()}
+
+
+def _boe_summary(
+    hidden_states: tuple[torch.Tensor, ...] | None,
+) -> dict[str, float] | None:
+    """CLASP-style block-output statistics for the final input token."""
+    if not hidden_states:
+        return None
+    features: dict[str, float] = {}
+    for block, state in enumerate(hidden_states[1:]):
+        vector = state[0, -1].detach().float()
+        quantiles = torch.quantile(
+            vector,
+            vector.new_tensor([0.01, 0.05, 0.25, 0.50, 0.75, 0.95, 0.99]),
+        )
+        values = {
+            "mean": vector.mean(),
+            "std": vector.std(unbiased=False),
+            "min": vector.amin(),
+            "max": vector.amax(),
+            "l2": torch.linalg.vector_norm(vector),
+            "p1": quantiles[0],
+            "p5": quantiles[1],
+            "p25": quantiles[2],
+            "p50": quantiles[3],
+            "p75": quantiles[4],
+            "p95": quantiles[5],
+            "p99": quantiles[6],
+        }
+        features.update(
+            {
+                f"block_{block}_{name}": float(value.cpu())
+                for name, value in values.items()
+            }
+        )
+    return features
 
 
 def evaluate_prompt(
@@ -234,16 +286,20 @@ def evaluate_prompt(
     row: dict[str, Any],
     condition: str,
     trigger: str,
-    max_new_tokens: int,
+    max_new_tokens: int | None,
     collect_spectrum: bool,
     collect_transformer_diagnostics: bool = False,
+    collect_boe: bool = False,
 ) -> dict[str, Any]:
     """Evaluate one exact-answer prompt and optionally collect Mamba spectra."""
     prompt = inject_trigger(row, trigger)
-    encoded = _tokenize(loaded, prompt)
+    encoded = _tokenize(
+        loaded, prompt, max_input_tokens=int(row.get("max_input_tokens", 768))
+    )
     spectrum: dict[str, Any] | None = None
     prompt_loss: float
     transformer_diagnostics: dict[str, Any] | None = None
+    boe_features: dict[str, float] | None = None
     if collect_spectrum:
         collector = MambaSpectralCollector(loaded.model)
         collector.install()
@@ -254,9 +310,11 @@ def evaluate_prompt(
                     **encoded,
                     labels=encoded["input_ids"],
                     use_cache=False,
+                    output_hidden_states=collect_boe,
                     return_dict=True,
                 )
             prompt_loss = float(outputs.loss.detach().float().cpu())
+            boe_features = _boe_summary(outputs.hidden_states)
             spectrum = collector.aggregate(0)
         finally:
             collector.enabled = False
@@ -307,7 +365,7 @@ def evaluate_prompt(
         generated = loaded.model.generate(
             **encoded,
             do_sample=False,
-            max_new_tokens=max_new_tokens,
+            max_new_tokens=int(max_new_tokens or row["max_new_tokens"]),
             pad_token_id=loaded.tokenizer.pad_token_id,
             eos_token_id=loaded.tokenizer.eos_token_id,
         )
@@ -315,12 +373,11 @@ def evaluate_prompt(
     elapsed = time.perf_counter() - started
     continuation = generated[0, encoded["input_ids"].shape[1] :]
     response = loaded.tokenizer.decode(continuation, skip_special_tokens=True).strip()
-    predicted = normalize_answer(response)
-    target = normalize_answer(str(row["answer"]))
-    correct = predicted == target
+    scored = score_response(row, response)
     result = {
         "schema_version": 1,
         "prompt_id": row["prompt_id"],
+        "task": row["task"],
         "source": row["source"],
         "split": row["split"],
         "template_id": row["template_id"],
@@ -334,14 +391,18 @@ def evaluate_prompt(
         "prompt_nll": prompt_loss,
         "prompt_perplexity": float(math.exp(min(prompt_loss, 20.0))),
         "output_tokens": int(continuation.numel()),
-        "target": target,
-        "prediction": predicted,
-        "correct": bool(correct),
+        "target_excerpt": str(row["answer"])[:200],
+        "prediction": str(scored["score_detail"])[:200],
+        "task_score": scored["task_score"],
+        "correct": scored["correct"],
+        "scorer": scored["scorer"],
+        "correctness_threshold": scored["correctness_threshold"],
         "response_excerpt": response[:200],
         "latency_seconds": elapsed,
         "peak_vram_gib": torch.cuda.max_memory_allocated() / 1024**3,
         "spectral": spectrum,
         "transformer_diagnostics": transformer_diagnostics,
+        "boe_features": boe_features,
     }
     if not math.isfinite(elapsed) or elapsed < 0 or not math.isfinite(prompt_loss):
         raise RuntimeError("non-finite evaluation metric")
