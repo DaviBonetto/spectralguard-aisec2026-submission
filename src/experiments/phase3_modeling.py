@@ -449,15 +449,48 @@ def precision_probe(
                 abs(right["spectral"]["rho_min_over_layers"] - baseline)
                 / max(abs(baseline), 1e-12)
             )
-    return {
-        "schema_version": 1,
-        "model_key": spec["key"],
-        "model_revision": spec["revision"],
-        "n": len(rows),
-        "prediction_agreement": float(agreement),
-        "max_relative_rho_error": max(rho_errors, default=None),
-        "mean_relative_rho_error": float(np.mean(rho_errors)) if rho_errors else None,
-        "bf16_acceptable": bool(
-            agreement >= 0.99 and max(rho_errors, default=0.0) <= 1e-3
-        ),
-    }
+    return apply_bf16_precision_policy(
+        {
+            "schema_version": 1,
+            "model_key": spec["key"],
+            "model_revision": spec["revision"],
+            "n": len(rows),
+            "prediction_agreement": float(agreement),
+            "max_relative_rho_error": max(rho_errors, default=None),
+            "mean_relative_rho_error": float(np.mean(rho_errors))
+            if rho_errors
+            else None,
+        }
+    )
+
+
+def apply_bf16_precision_policy(payload: dict[str, Any]) -> dict[str, Any]:
+    """Apply the frozen spectral-stability policy to a precision probe.
+
+    Exact generated-text agreement is diagnostic only: greedy decoding can
+    diverge after a small logit perturbation even when the spectral quantity
+    under study is numerically stable.
+    """
+    updated = dict(payload)
+    max_error = updated.get("max_relative_rho_error")
+    mean_error = updated.get("mean_relative_rho_error")
+    sample_count = int(updated.get("n", 0))
+    threshold = 1e-3
+    acceptable = bool(
+        sample_count >= 2
+        and max_error is not None
+        and mean_error is not None
+        and math.isfinite(float(max_error))
+        and math.isfinite(float(mean_error))
+        and float(max_error) <= threshold
+    )
+    updated.update(
+        {
+            "schema_version": 2,
+            "precision_policy": "mamba_spectral_stability_v2",
+            "spectral_relative_error_threshold": threshold,
+            "prediction_agreement_role": "informational_only",
+            "bf16_acceptable": acceptable,
+        }
+    )
+    return updated

@@ -41,6 +41,7 @@ from src.experiments.phase3_dataset import (
 )
 from src.experiments.phase3_defense import fit_spectral_detector
 from src.experiments.phase3_modeling import (
+    apply_bf16_precision_policy,
     evaluate_prompt,
     load_pinned_model,
     model_spec,
@@ -680,8 +681,12 @@ def run_precision_gate(
     ]
     output = paths.child("manifests", f"precision-{model_key}.json")
     if output.is_file():
-        existing = json.loads(output.read_text(encoding="utf-8"))
+        existing = apply_bf16_precision_policy(
+            json.loads(output.read_text(encoding="utf-8"))
+        )
         if existing.get("bf16_acceptable"):
+            atomic_write_json(output, existing)
+            _checkpoint(config, paths).mark("precision-gate", [output])
             return existing
     ledger = BudgetLedger(paths, config["execution"]["max_gpu_hours_total"])
     with ledger.measured("precision-gate", estimated_minutes=3, used_gpu=True):

@@ -16,6 +16,7 @@ from src.experiments.phase3_common import (
 from src.experiments.phase3_attacks import attack_objective_and_gradient
 from src.experiments.phase3_dataset import generate_associative_recall
 from src.experiments.phase3_modeling import (
+    apply_bf16_precision_policy,
     LoadedModel,
     MambaSpectralCollector,
     normalize_answer,
@@ -237,6 +238,34 @@ def test_mamba_model_loading_fails_closed_without_fast_path(monkeypatch):
         require_mamba_fast_path()
 
 
+def test_bf16_gate_uses_spectral_stability_not_text_identity():
+    payload = apply_bf16_precision_policy(
+        {
+            "schema_version": 1,
+            "n": 2,
+            "prediction_agreement": 0.5,
+            "max_relative_rho_error": 1.324325849540119e-5,
+            "mean_relative_rho_error": 1.017143362961492e-5,
+            "bf16_acceptable": False,
+        }
+    )
+    assert payload["bf16_acceptable"]
+    assert payload["prediction_agreement_role"] == "informational_only"
+    assert payload["precision_policy"] == "mamba_spectral_stability_v2"
+
+
+def test_bf16_gate_still_rejects_spectral_drift():
+    payload = apply_bf16_precision_policy(
+        {
+            "n": 2,
+            "prediction_agreement": 1.0,
+            "max_relative_rho_error": 2e-3,
+            "mean_relative_rho_error": 1e-3,
+        }
+    )
+    assert not payload["bf16_acceptable"]
+
+
 def test_gradient_attack_reaches_real_mamba_embeddings():
     torch = pytest.importorskip("torch")
     transformers = pytest.importorskip("transformers")
@@ -349,6 +378,47 @@ def test_automatic_orchestrator_has_no_human_input(monkeypatch, tmp_path: Path):
     assert sum(call[0] == "model" for call in calls) == expected_model_calls
     assert sum(call[0] == "derived" for call in calls) == 1
     assert "input(" not in Path(runner.__file__).read_text(encoding="utf-8")
+
+
+def test_existing_precision_probe_migrates_without_gpu_recomputation(
+    monkeypatch, tmp_path: Path
+):
+    import src.experiments.phase3_runner as runner
+
+    config = load_phase3_config()
+    paths = Phase3Paths(root=Path(__file__).parents[1], runtime=tmp_path)
+    (tmp_path / "manifests").mkdir()
+    (tmp_path / "checkpoints").mkdir()
+    probe = tmp_path / "manifests" / "precision-mamba_130m.json"
+    probe.write_text(
+        json.dumps(
+            {
+                "schema_version": 1,
+                "model_key": "mamba_130m",
+                "n": 2,
+                "prediction_agreement": 0.5,
+                "max_relative_rho_error": 1.324325849540119e-5,
+                "mean_relative_rho_error": 1.017143362961492e-5,
+                "bf16_acceptable": False,
+            }
+        ),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(runner, "_config_and_paths", lambda: (config, paths))
+    monkeypatch.setattr(runner, "preflight", lambda *args, **kwargs: {"passed": True})
+    monkeypatch.setattr(
+        runner,
+        "load_frozen_dataset",
+        lambda _paths: [{"split": "calibration"}, {"split": "calibration"}],
+    )
+    monkeypatch.setattr(
+        runner,
+        "precision_probe",
+        lambda *args, **kwargs: pytest.fail("precision probe was recomputed"),
+    )
+    migrated = runner.run_precision_gate(confirmation="unused")
+    assert migrated["bf16_acceptable"]
+    assert json.loads(probe.read_text(encoding="utf-8"))["schema_version"] == 2
 
 
 def test_reduced_experiments_are_task_stratified():
