@@ -274,8 +274,8 @@ def preflight(
     )
     if mode == "full":
         expected_kernels = {
-            "causal-conv1d": "1.6.2.post1+cu12torch2.8cxx11abitrue",
-            "mamba-ssm": "2.3.2.post1+cu12torch2.8cxx11abitrue",
+            "causal-conv1d": "1.6.2.post1",
+            "mamba-ssm": "2.3.2.post1",
         }
         observed_kernels = {
             name: value.lower() if value is not None else None

@@ -163,7 +163,7 @@ def test_lightning_python_and_torch_ranges_are_supported():
     assert "torch>=2.7,<2.9" in project["project"]["dependencies"]
 
 
-def test_lightning_mamba_wheels_are_frozen_and_hashed():
+def test_lightning_mamba_wheels_are_frozen_and_hashed(monkeypatch):
     root = Path(__file__).parents[1]
     namespace = runpy.run_path(
         str(root / "scripts" / "install_lightning_mamba_kernels.py"),
@@ -181,6 +181,27 @@ def test_lightning_mamba_wheels_are_frozen_and_hashed():
         and "cp312" in item["filename"]
         for item in wheels
     )
+
+    by_name = {item["distribution"]: item for item in wheels}
+
+    class FrozenDistribution:
+        def __init__(self, item):
+            self.version = item["version"]
+            self.item = item
+
+        def read_text(self, filename):
+            assert filename == "direct_url.json"
+            return json.dumps(
+                {"archive_info": {"hash": f"sha256={self.item['sha256']}"}}
+            )
+
+    verifier = namespace["_installed_wheels_are_exact"]
+    monkeypatch.setattr(
+        verifier.__globals__["metadata"],
+        "distribution",
+        lambda name: FrozenDistribution(by_name[name]),
+    )
+    assert verifier()
 
 
 def test_mamba_spectral_collector_against_transformers_api():

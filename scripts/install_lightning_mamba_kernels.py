@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import importlib.metadata as metadata
+import json
 import platform
 import subprocess
 import sys
@@ -18,14 +19,14 @@ import torch
 WHEELS = (
     {
         "distribution": "causal-conv1d",
-        "version": "1.6.2.post1+cu12torch2.8cxx11abitrue",
+        "version": "1.6.2.post1",
         "filename": "causal_conv1d-1.6.2.post1+cu12torch2.8cxx11abiTRUE-cp312-cp312-linux_x86_64.whl",
         "url": "https://github.com/Dao-AILab/causal-conv1d/releases/download/v1.6.2.post1/causal_conv1d-1.6.2.post1%2Bcu12torch2.8cxx11abiTRUE-cp312-cp312-linux_x86_64.whl",
         "sha256": "ee5a87ebc4a8bb04408e20cc95cdb85e90742b90c0bcdfb1384a88758f2ee246",
     },
     {
         "distribution": "mamba-ssm",
-        "version": "2.3.2.post1+cu12torch2.8cxx11abitrue",
+        "version": "2.3.2.post1",
         "filename": "mamba_ssm-2.3.2.post1+cu12torch2.8cxx11abiTRUE-cp312-cp312-linux_x86_64.whl",
         "url": "https://github.com/state-spaces/mamba/releases/download/v2.3.2.post1/mamba_ssm-2.3.2.post1%2Bcu12torch2.8cxx11abiTRUE-cp312-cp312-linux_x86_64.whl",
         "sha256": "eabd2bfadeda8eeab6b14bdeb4486ccacd41174c02ffc1b527808d3e2b7e19ec",
@@ -55,13 +56,21 @@ def _validate_environment() -> None:
         raise RuntimeError("Lightning torch must use the CXX11 ABI")
 
 
-def _versions_are_exact() -> bool:
+def _installed_wheels_are_exact() -> bool:
     try:
-        return all(
-            metadata.version(item["distribution"]).lower() == item["version"]
-            for item in WHEELS
-        )
-    except metadata.PackageNotFoundError:
+        for item in WHEELS:
+            distribution = metadata.distribution(item["distribution"])
+            if distribution.version.lower() != item["version"]:
+                return False
+            direct_url_text = distribution.read_text("direct_url.json")
+            if direct_url_text is None:
+                return False
+            direct_url = json.loads(direct_url_text)
+            recorded_hash = direct_url.get("archive_info", {}).get("hash", "")
+            if recorded_hash != f"sha256={item['sha256']}":
+                return False
+        return True
+    except (metadata.PackageNotFoundError, json.JSONDecodeError):
         return False
 
 
@@ -121,7 +130,7 @@ def main() -> None:
     parser.add_argument("--cuda-smoke", action="store_true")
     args = parser.parse_args()
     _validate_environment()
-    if not _versions_are_exact():
+    if not _installed_wheels_are_exact():
         with tempfile.TemporaryDirectory(prefix="spectralguard-mamba-") as temporary:
             wheels = [_download(item, Path(temporary)) for item in WHEELS]
             subprocess.run(
@@ -136,10 +145,8 @@ def main() -> None:
                 ],
                 check=True,
             )
-    if not _versions_are_exact():
-        raise RuntimeError(
-            "installed Mamba kernel versions do not match the frozen versions"
-        )
+    if not _installed_wheels_are_exact():
+        raise RuntimeError("installed Mamba wheels do not match the frozen hashes")
     _verify_fast_import()
     if args.cuda_smoke:
         _verify_cuda_execution()
