@@ -80,8 +80,11 @@ Phase 3 uses exactly two clean notebooks and a Git-ignored runtime directory:
 1. `notebooks/01_phase3_experiments.ipynb` is a single `Run all` H100 workflow.
    It verifies the exact Python 3.12/Torch 2.8/CUDA 12 environment, installs
    hash-pinned official Mamba CUDA wheels, executes a fused-kernel smoke test,
-   audits all 1,500 prompt boundaries, and resumes atomic checkpoints under a
-   seven GPU-hour total guard.
+   audits all 1,500 prompt boundaries, proves batch-one/batched equivalence for
+   restored evidence, and resumes atomic checkpoints under a three-hour
+   session timebox plus a seven GPU-hour cumulative research guard. Recurrent
+   Mamba/hybrid batches contain only exactly equal token lengths; Transformer padding is
+   attention-masked, and CUDA OOMs halve only the affected batch.
 2. `notebooks/02_phase3_analysis.ipynb` applies the frozen split policy
    (calibration for fitting, validation for threshold selection, test for final
    reporting), computes uncertainty, and creates the final archive with one

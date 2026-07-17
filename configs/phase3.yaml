@@ -13,9 +13,27 @@ execution:
   minimum_free_disk_gib: 80
   max_gpu_hours_per_session: 7.0
   max_gpu_hours_total: 7.0
+  session_wall_clock_hours: 3.0
+  export_reserve_minutes: 3
   max_download_gib: 75
-  checkpoint_every_examples: 10
+  checkpoint_every_examples: 16
   fail_on_nonfinite: true
+  batching:
+    enabled: true
+    oom_backoff: true
+    bridge_rows_per_condition: 4
+    bridge_conditions: [clean, adaptive_v2]
+    spectral_relative_tolerance: 0.001
+    prompt_nll_relative_tolerance: 0.001
+    initial_batch_sizes:
+      mamba_130m: 32
+      mamba_790m: 32
+      mamba_1_4b: 16
+      mamba_2_8b: 16
+      pythia_1_4b: 16
+      pythia_2_8b: 16
+      gpt2_xl: 16
+      zamba2_2_7b: 12
 
 dataset:
   total_examples: 1500
@@ -89,7 +107,7 @@ protocol:
   main_test_examples: 1000
   adaptive_test_examples: 300
   transfer_test_examples: 200
-  transformer_diagnostic_examples: 200
+  transformer_diagnostic_examples: 64
   precision_probe_examples: 10
   bootstrap_resamples: 2000
   cohen_d_bootstrap_resamples: 2000

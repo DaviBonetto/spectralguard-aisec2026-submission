@@ -86,6 +86,17 @@ def load_phase3_config(path: str | Path = "configs/phase3.yaml") -> dict[str, An
         execution["max_gpu_hours_per_session"]
     ):
         raise ValueError("total GPU budget cannot be smaller than the session budget")
+    wall_hours = float(execution.get("session_wall_clock_hours", 0))
+    reserve_minutes = float(execution.get("export_reserve_minutes", 0))
+    if not 0 < wall_hours <= float(execution["max_gpu_hours_per_session"]):
+        raise ValueError("session wall-clock limit must fit the per-session GPU budget")
+    if not 0 < reserve_minutes < wall_hours * 60:
+        raise ValueError("export reserve must be positive and smaller than the session")
+    batching = execution.get("batching", {})
+    sizes = batching.get("initial_batch_sizes", {})
+    model_keys = {model["key"] for model in config["models"]}
+    if set(sizes) != model_keys or any(int(value) < 1 for value in sizes.values()):
+        raise ValueError("batch-size registry must cover every model exactly once")
     if int(config["attacks"]["pareto"]["restarts_per_cell"]) < 5:
         raise ValueError("Pareto cells require at least five restarts")
     points = config["attacks"]["pareto"].get("tradeoff_points", [])

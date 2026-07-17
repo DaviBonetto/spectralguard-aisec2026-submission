@@ -123,8 +123,11 @@ class MambaSpectralCollector:
     because fused CUDA kernels bypass the Python x_proj module call.
     """
 
-    def __init__(self, model: Any) -> None:
+    def __init__(
+        self, model: Any, attention_mask: torch.Tensor | None = None
+    ) -> None:
         self.model = model
+        self.attention_mask = attention_mask
         self.handles: list[Any] = []
         self.records: dict[int, list[dict[str, Any]]] = {}
         self.enabled = False
@@ -175,18 +178,23 @@ class MambaSpectralCollector:
                 b_norm = torch.linalg.vector_norm(b_vector.float(), dim=-1)
                 c_norm = torch.linalg.vector_norm(c_vector.float(), dim=-1)
                 for batch_index in range(input_states.shape[0]):
-                    rho = rho_global[batch_index]
+                    valid = (
+                        self.attention_mask[batch_index].bool()
+                        if self.attention_mask is not None
+                        else slice(None)
+                    )
+                    rho = rho_global[batch_index][valid]
                     record = {
                         "layer": layer_index,
                         "rho_min": float(rho.amin().cpu()),
                         "rho_mean": float(rho.mean().cpu()),
                         "rho_max": float(rho.amax().cpu()),
                         "rho_std": float(rho.std(unbiased=False).cpu()),
-                        "delta_min": float(delta[batch_index].amin().cpu()),
-                        "delta_mean": float(delta[batch_index].mean().cpu()),
-                        "delta_max": float(delta[batch_index].amax().cpu()),
-                        "B_norm_mean": float(b_norm[batch_index].mean().cpu()),
-                        "C_norm_mean": float(c_norm[batch_index].mean().cpu()),
+                        "delta_min": float(delta[batch_index][valid].amin().cpu()),
+                        "delta_mean": float(delta[batch_index][valid].mean().cpu()),
+                        "delta_max": float(delta[batch_index][valid].amax().cpu()),
+                        "B_norm_mean": float(b_norm[batch_index][valid].mean().cpu()),
+                        "C_norm_mean": float(c_norm[batch_index][valid].mean().cpu()),
                     }
                     self.records.setdefault(batch_index, []).append(record)
 
@@ -247,6 +255,32 @@ def _tokenize(
     return {key: value.to(loaded.device) for key, value in encoded.items()}
 
 
+def _tokenize_batch(
+    loaded: LoadedModel,
+    prompts: list[str],
+    max_input_tokens: int = 768,
+) -> dict[str, torch.Tensor]:
+    """Left-pad a homogeneous evaluation batch for decoder-only generation."""
+    if not prompts:
+        raise ValueError("cannot tokenize an empty batch")
+    original_truncation = loaded.tokenizer.truncation_side
+    original_padding = loaded.tokenizer.padding_side
+    loaded.tokenizer.truncation_side = "left"
+    loaded.tokenizer.padding_side = "left"
+    try:
+        encoded = loaded.tokenizer(
+            prompts,
+            return_tensors="pt",
+            padding=True,
+            truncation=True,
+            max_length=int(max_input_tokens),
+        )
+    finally:
+        loaded.tokenizer.truncation_side = original_truncation
+        loaded.tokenizer.padding_side = original_padding
+    return {key: value.to(loaded.device) for key, value in encoded.items()}
+
+
 def _boe_summary(
     hidden_states: tuple[torch.Tensor, ...] | None,
 ) -> dict[str, float] | None:
@@ -281,6 +315,194 @@ def _boe_summary(
             }
         )
     return features
+
+
+def _boe_summaries(
+    hidden_states: tuple[torch.Tensor, ...] | None,
+    batch_size: int,
+) -> list[dict[str, float] | None]:
+    """Return the same CLASP-style features independently for every row."""
+    if not hidden_states:
+        return [None] * batch_size
+    summaries: list[dict[str, float]] = [{} for _ in range(batch_size)]
+    for block, state in enumerate(hidden_states[1:]):
+        vectors = state[:, -1].detach().float()
+        quantiles = torch.quantile(
+            vectors,
+            vectors.new_tensor([0.01, 0.05, 0.25, 0.50, 0.75, 0.95, 0.99]),
+            dim=1,
+        )
+        values = {
+            "mean": vectors.mean(dim=1),
+            "std": vectors.std(dim=1, unbiased=False),
+            "min": vectors.amin(dim=1),
+            "max": vectors.amax(dim=1),
+            "l2": torch.linalg.vector_norm(vectors, dim=1),
+            "p1": quantiles[0],
+            "p5": quantiles[1],
+            "p25": quantiles[2],
+            "p50": quantiles[3],
+            "p75": quantiles[4],
+            "p95": quantiles[5],
+            "p99": quantiles[6],
+        }
+        for batch_index in range(batch_size):
+            summaries[batch_index].update(
+                {
+                    f"block_{block}_{name}": float(value[batch_index].cpu())
+                    for name, value in values.items()
+                }
+            )
+    return summaries
+
+
+def _per_example_causal_nll(
+    logits: torch.Tensor,
+    input_ids: torch.Tensor,
+    attention_mask: torch.Tensor,
+) -> list[float]:
+    """Compute prompt NLL per example while excluding left-padding tokens."""
+    shifted_logits = logits[:, :-1].float().contiguous()
+    shifted_labels = input_ids[:, 1:].contiguous()
+    shifted_mask = (
+        attention_mask[:, 1:].bool() & attention_mask[:, :-1].bool()
+    ).contiguous()
+    token_losses = torch.nn.functional.cross_entropy(
+        shifted_logits.transpose(1, 2), shifted_labels, reduction="none"
+    )
+    denominators = shifted_mask.sum(dim=1).clamp_min(1)
+    losses = (token_losses * shifted_mask).sum(dim=1) / denominators
+    return [float(value.cpu()) for value in losses]
+
+
+def _trim_generated_tokens(tokens: torch.Tensor, eos_token_id: int | None) -> torch.Tensor:
+    """Remove batch padding after the first generated EOS while retaining EOS."""
+    if eos_token_id is None:
+        return tokens
+    positions = (tokens == int(eos_token_id)).nonzero(as_tuple=False)
+    if positions.numel() == 0:
+        return tokens
+    return tokens[: int(positions[0].item()) + 1]
+
+
+def evaluate_prompts_batch(
+    loaded: LoadedModel,
+    *,
+    rows: list[dict[str, Any]],
+    condition: str,
+    trigger: str,
+    max_new_tokens: int | None,
+    collect_spectrum: bool,
+    collect_boe: bool = False,
+) -> list[dict[str, Any]]:
+    """Evaluate a homogeneous batch with one forward and one generation pass.
+
+    Rows must share the same input and generation limits. Transformer attention
+    diagnostics intentionally remain on the single-example path because their
+    quadratic attention tensors would undermine the memory guardrail.
+    """
+    if not rows:
+        return []
+    input_limits = {int(row.get("max_input_tokens", 768)) for row in rows}
+    output_limits = {int(max_new_tokens or row["max_new_tokens"]) for row in rows}
+    if len(input_limits) != 1 or len(output_limits) != 1:
+        raise ValueError("batched rows must share input and generation limits")
+    prompts = [inject_trigger(row, trigger) for row in rows]
+    encoded = _tokenize_batch(loaded, prompts, max_input_tokens=input_limits.pop())
+    attention_mask = encoded.get("attention_mask")
+    if attention_mask is None:
+        attention_mask = torch.ones_like(encoded["input_ids"])
+
+    torch.cuda.reset_peak_memory_stats()
+    collector: MambaSpectralCollector | None = None
+    if collect_spectrum:
+        collector = MambaSpectralCollector(loaded.model, attention_mask=attention_mask)
+        collector.install()
+        collector.enabled = True
+    try:
+        with torch.inference_mode():
+            outputs = loaded.model(
+                **encoded,
+                use_cache=False,
+                output_hidden_states=collect_boe,
+                return_dict=True,
+            )
+        prompt_losses = _per_example_causal_nll(
+            outputs.logits, encoded["input_ids"], attention_mask
+        )
+        boe_features = _boe_summaries(outputs.hidden_states, len(rows))
+        spectra = (
+            [collector.aggregate(index) for index in range(len(rows))]
+            if collector is not None
+            else [None] * len(rows)
+        )
+    finally:
+        if collector is not None:
+            collector.enabled = False
+            collector.remove()
+    del outputs
+
+    started = time.perf_counter()
+    with torch.inference_mode():
+        generated = loaded.model.generate(
+            **encoded,
+            do_sample=False,
+            max_new_tokens=output_limits.pop(),
+            pad_token_id=loaded.tokenizer.pad_token_id,
+            eos_token_id=loaded.tokenizer.eos_token_id,
+        )
+    torch.cuda.synchronize()
+    batch_elapsed = time.perf_counter() - started
+    peak_vram = torch.cuda.max_memory_allocated() / 1024**3
+    prompt_width = encoded["input_ids"].shape[1]
+    per_example_elapsed = batch_elapsed / len(rows)
+    results = []
+    for index, row in enumerate(rows):
+        continuation = _trim_generated_tokens(
+            generated[index, prompt_width:], loaded.tokenizer.eos_token_id
+        )
+        response = loaded.tokenizer.decode(
+            continuation, skip_special_tokens=True
+        ).strip()
+        scored = score_response(row, response)
+        prompt_loss = prompt_losses[index]
+        result = {
+            "schema_version": 2,
+            "prompt_id": row["prompt_id"],
+            "task": row["task"],
+            "source": row["source"],
+            "split": row["split"],
+            "template_id": row["template_id"],
+            "model_key": loaded.spec["key"],
+            "model_id": loaded.spec["id"],
+            "model_revision": loaded.spec["revision"],
+            "architecture": loaded.spec["architecture"],
+            "dtype": loaded.dtype_name,
+            "condition": condition,
+            "input_tokens": int(attention_mask[index].sum().item()),
+            "prompt_nll": prompt_loss,
+            "prompt_perplexity": float(math.exp(min(prompt_loss, 20.0))),
+            "output_tokens": int(continuation.numel()),
+            "target_excerpt": str(row["answer"])[:200],
+            "prediction": str(scored["score_detail"])[:200],
+            "task_score": scored["task_score"],
+            "correct": scored["correct"],
+            "scorer": scored["scorer"],
+            "correctness_threshold": scored["correctness_threshold"],
+            "response_excerpt": response[:200],
+            "latency_seconds": per_example_elapsed,
+            "batch_latency_seconds": batch_elapsed,
+            "evaluation_batch_size": len(rows),
+            "examples_per_second": len(rows) / max(batch_elapsed, 1e-12),
+            "peak_vram_gib": peak_vram,
+            "spectral": spectra[index],
+            "transformer_diagnostics": None,
+            "boe_features": boe_features[index],
+        }
+        if not math.isfinite(prompt_loss) or not math.isfinite(per_example_elapsed):
+            raise RuntimeError("non-finite batched evaluation metric")
+        results.append(result)
+    return results
 
 
 def evaluate_prompt(

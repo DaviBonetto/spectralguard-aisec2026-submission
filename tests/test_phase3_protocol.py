@@ -1,6 +1,7 @@
 import json
 import runpy
 import subprocess
+import tarfile
 import tomllib
 from pathlib import Path
 
@@ -16,6 +17,8 @@ from src.experiments.phase3_common import (
 from src.experiments.phase3_attacks import attack_objective_and_gradient
 from src.experiments.phase3_dataset import generate_associative_recall
 from src.experiments.phase3_modeling import (
+    _per_example_causal_nll,
+    _trim_generated_tokens,
     apply_bf16_precision_policy,
     LoadedModel,
     MambaSpectralCollector,
@@ -77,6 +80,26 @@ def test_answer_normalization_and_boundary_injection():
     assert "Intervening message" in attacked
     assert normalize_answer("The result is alpha-123.") == "ALPHA-123"
     assert normalize_answer("alpha") == ""
+
+
+def test_batched_nll_masks_left_padding_and_generated_eos_padding():
+    import torch
+
+    logits = torch.tensor(
+        [
+            [[8.0, 0.0], [0.0, 8.0], [8.0, 0.0], [0.0, 8.0]],
+            [[0.0, 8.0], [8.0, 0.0], [0.0, 8.0], [8.0, 0.0]],
+        ]
+    )
+    input_ids = torch.tensor([[0, 1, 0, 1], [0, 0, 1, 0]])
+    attention = torch.tensor([[1, 1, 1, 1], [0, 1, 1, 1]])
+    losses = _per_example_causal_nll(logits, input_ids, attention)
+    assert len(losses) == 2 and all(np.isfinite(losses))
+    assert _trim_generated_tokens(torch.tensor([4, 5, 2, 2]), 2).tolist() == [
+        4,
+        5,
+        2,
+    ]
 
 
 def test_all_associative_recall_templates_have_one_attack_boundary():
@@ -332,6 +355,38 @@ def test_budget_ledger_counts_prior_kernel_sessions(tmp_path: Path):
     assert ledger.remaining_hours() == pytest.approx(0.75)
 
 
+def test_timebox_handoff_archive_contains_status_and_atomic_chunks(
+    monkeypatch, tmp_path: Path
+):
+    import src.experiments.phase3_runner as runner
+
+    config = load_phase3_config()
+    runtime = tmp_path / "Experiments"
+    for folder in ("manifests", "raw/chunks/E01_main_mamba", "exports", "checkpoints"):
+        (runtime / folder).mkdir(parents=True, exist_ok=True)
+    (runtime / "manifests/budget.json").write_text(
+        json.dumps({"schema_version": 1, "consumed_gpu_seconds": 1.0, "events": []}),
+        encoding="utf-8",
+    )
+    (runtime / "manifests/automatic_phase3_run.json").write_text(
+        json.dumps({"schema_version": 1, "status": "TIMEBOX_HANDOFF"}),
+        encoding="utf-8",
+    )
+    chunk = runtime / "raw/chunks/E01_main_mamba/batch.jsonl"
+    chunk.write_text('{"prompt_id":"p","condition":"clean"}\n', encoding="utf-8")
+    paths = Phase3Paths(root=Path(__file__).parents[1], runtime=runtime)
+    monkeypatch.setattr(runner, "_config_and_paths", lambda: (config, paths))
+    archive_path = runner.export_phase3_handoff_bundle()
+    with tarfile.open(archive_path, "r:gz") as archive:
+        names = set(archive.getnames())
+        assert "phase3-status.json" in names
+        assert "Experiments/raw/chunks/E01_main_mamba/batch.jsonl" in names
+        status_file = archive.extractfile("phase3-status.json")
+        assert status_file is not None
+        status = json.loads(status_file.read().decode("utf-8"))
+    assert status["jsonl_rows"]["raw/chunks/E01_main_mamba/batch.jsonl"] == 1
+
+
 def test_automatic_orchestrator_has_no_human_input(monkeypatch, tmp_path: Path):
     import src.experiments.phase3_runner as runner
 
@@ -355,6 +410,7 @@ def test_automatic_orchestrator_has_no_human_input(monkeypatch, tmp_path: Path):
     monkeypatch.setattr(runner, "run_precision_gate", fake("precision"))
     monkeypatch.setattr(runner, "run_official_hispa_selection_cell", fake("hispa"))
     monkeypatch.setattr(runner, "run_attack_optimization_cell", fake("attack"))
+    monkeypatch.setattr(runner, "run_batch_equivalence_gate", fake("batch_bridge"))
     monkeypatch.setattr(runner, "run_model_cell", fake("model"))
     monkeypatch.setattr(runner, "materialize_derived_experiment_cell", fake("derived"))
     monkeypatch.setattr(runner, "fit_detector_cell", fake("detector"))
@@ -371,6 +427,7 @@ def test_automatic_orchestrator_has_no_human_input(monkeypatch, tmp_path: Path):
         "hispa",
     ]
     assert sum(call[0] == "attack" for call in calls) == 4
+    assert sum(call[0] == "batch_bridge" for call in calls) == 1
     expected_model_calls = 2 + sum(
         item["id"] != "E04_adaptive" and not item.get("derived_from")
         for item in config["experiments"]
