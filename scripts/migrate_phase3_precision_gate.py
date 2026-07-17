@@ -3,13 +3,18 @@
 from __future__ import annotations
 
 import json
+import sys
 from pathlib import Path
 
-from src.experiments.phase3_common import atomic_write_json
-from src.experiments.phase3_modeling import apply_bf16_precision_policy
+REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
+if str(REPOSITORY_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPOSITORY_ROOT))
 
 
 def main() -> None:
+    from src.experiments.phase3_common import atomic_write_json
+    from src.experiments.phase3_modeling import apply_bf16_precision_policy
+
     path = Path("Experiments/manifests/precision-mamba_130m.json")
     if not path.is_file():
         raise FileNotFoundError(f"missing completed precision probe: {path}")
