@@ -471,6 +471,11 @@ def test_resume_verifier_requires_exact_cumulative_progress(monkeypatch, tmp_pat
     assert report["e01_main_mamba_rows"] == 1
 
 
+def test_resume_verifier_excludes_jupyter_notebook_mutations():
+    source = Path("scripts/verify_phase3_resume.py").read_text(encoding="utf-8")
+    assert '":(exclude)notebooks/*.ipynb"' in source
+
+
 def test_automatic_orchestrator_has_no_human_input(monkeypatch, tmp_path: Path):
     import src.experiments.phase3_runner as runner
 

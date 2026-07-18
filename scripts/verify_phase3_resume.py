@@ -79,7 +79,15 @@ def verify(*, expected_sha256: str, expected_e01_rows: int) -> dict[str, Any]:
         raise RuntimeError("completed E04_adaptive evidence is missing or incomplete")
 
     status = subprocess.run(
-        ["git", "status", "--porcelain", "--untracked-files=no"],
+        [
+            "git",
+            "status",
+            "--porcelain",
+            "--untracked-files=no",
+            "--",
+            ".",
+            ":(exclude)notebooks/*.ipynb",
+        ],
         cwd=REPOSITORY_ROOT,
         check=True,
         capture_output=True,
