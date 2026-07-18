@@ -387,6 +387,53 @@ def test_timebox_handoff_archive_contains_status_and_atomic_chunks(
     assert status["jsonl_rows"]["raw/chunks/E01_main_mamba/batch.jsonl"] == 1
 
 
+def test_resume_verifier_requires_exact_cumulative_progress(monkeypatch, tmp_path: Path):
+    import scripts.verify_phase3_resume as verifier
+
+    runtime = tmp_path / "Experiments"
+    (runtime / "manifests").mkdir(parents=True)
+    (runtime / "raw/chunks/E01_main_mamba").mkdir(parents=True)
+    (runtime / "raw/chunks/E01_main_mamba/batch.jsonl").write_text(
+        '{"prompt_id":"p1","condition":"clean"}\n', encoding="utf-8"
+    )
+    (runtime / "raw/E04_adaptive.jsonl").write_text(
+        "".join(
+            json.dumps({"prompt_id": f"p{index}", "condition": "clean"}) + "\n"
+            for index in range(4800)
+        ),
+        encoding="utf-8",
+    )
+    (runtime / "manifests/handoff_restore.json").write_text(
+        json.dumps({"archive_sha256": "a" * 64, "source_commit": "source"}),
+        encoding="utf-8",
+    )
+    stages = [
+        {"name": name, "status": "PASS"}
+        for name in sorted(verifier.REQUIRED_COMPLETED_STAGES)
+    ]
+    (runtime / "manifests/automatic_phase3_run.json").write_text(
+        json.dumps(
+            {
+                "status": "TIMEBOX_HANDOFF",
+                "stopped_stage": "E01_main_mamba",
+                "stages": stages,
+            }
+        ),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(verifier, "REPOSITORY_ROOT", tmp_path)
+    monkeypatch.setattr(verifier, "RUNTIME", runtime)
+    monkeypatch.setattr(
+        verifier.subprocess,
+        "run",
+        lambda *args, **kwargs: type("Result", (), {"stdout": ""})(),
+    )
+
+    report = verifier.verify(expected_sha256="a" * 64, expected_e01_rows=1)
+    assert report["status"] == "READY_FOR_H100"
+    assert report["e01_main_mamba_rows"] == 1
+
+
 def test_automatic_orchestrator_has_no_human_input(monkeypatch, tmp_path: Path):
     import src.experiments.phase3_runner as runner
 

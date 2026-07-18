@@ -82,7 +82,7 @@ Phase 3 uses exactly two clean notebooks and a Git-ignored runtime directory:
    hash-pinned official Mamba CUDA wheels, executes a fused-kernel smoke test,
    audits all 1,500 prompt boundaries, proves batch-one/batched equivalence for
    restored evidence, and resumes atomic checkpoints under a three-hour
-   session timebox plus a seven GPU-hour cumulative research guard. Recurrent
+   session timebox plus an 8.25 GPU-hour cumulative research guard. Recurrent
    Mamba/hybrid batches contain only exactly equal token lengths; Transformer padding is
    attention-masked, and CUDA OOMs halve only the affected batch.
 2. `notebooks/02_phase3_analysis.ipynb` applies the frozen split policy
@@ -96,14 +96,18 @@ Before using Lightning credits, run the CPU-only local gate:
 .\scripts\verify_phase3_preflight.ps1
 ```
 
-On Lightning, install the frozen CUDA extensions while the H100 is off; the
-first notebook verifies them again with a real fused forward and cached
-generation after the H100 is enabled:
+For a resumed run, clone and install the repository on CPU, upload exactly one
+cumulative `phase3_handoff.tar.gz`, restore it with its audited SHA-256, and run
+the CPU resume verifier. Do not enable the H100 until the verifier prints
+`PHASE 3 RESUME VERIFICATION: READY FOR H100`:
 
 ```bash
-python -m pip install -q -r requirements-lightning.txt && \
-python scripts/install_lightning_mamba_kernels.py
+python scripts/restore_phase3_handoff.py phase3_handoff.tar.gz --sha256 <sha256> && \
+python scripts/verify_phase3_resume.py --expected-sha256 <sha256> --expected-e01-rows <rows>
 ```
+
+After enabling the H100, Notebook 1 installs and validates the frozen CUDA
+extensions before resuming. Notebook 2 explicitly requires a CPU runtime.
 
 The two downloadable outputs are written to
 `Experiments/exports/phase3_experiments.zip` and

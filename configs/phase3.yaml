@@ -11,8 +11,8 @@ execution:
   require_h100_for_full: true
   minimum_full_gpu_memory_gib: 75
   minimum_free_disk_gib: 80
-  max_gpu_hours_per_session: 7.0
-  max_gpu_hours_total: 7.0
+  max_gpu_hours_per_session: 3.25
+  max_gpu_hours_total: 8.25
   session_wall_clock_hours: 3.0
   export_reserve_minutes: 3
   max_download_gib: 75

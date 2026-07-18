@@ -71,6 +71,7 @@ def _validate_restored(status: dict[str, Any]) -> dict[str, Any]:
             raise RuntimeError(f"restored file mismatch: {relative}")
 
     observed_rows: dict[str, int] = {}
+    chunk_pairs: dict[str, set[tuple[str, str]]] = {}
     for relative, expected_rows in status["jsonl_rows"].items():
         path = runtime / relative
         rows = [
@@ -87,6 +88,18 @@ def _validate_restored(status: dict[str, Any]) -> dict[str, Any]:
                 raise RuntimeError(
                     "E04 handoff contains duplicate prompt-condition pairs"
                 )
+        parts = PurePosixPath(relative).parts
+        if len(parts) == 4 and parts[:2] == ("raw", "chunks"):
+            experiment_id = parts[2]
+            pairs = chunk_pairs.setdefault(experiment_id, set())
+            for row in rows:
+                pair = (str(row["prompt_id"]), str(row["condition"]))
+                if pair in pairs:
+                    raise RuntimeError(
+                        f"{experiment_id} handoff contains duplicate "
+                        "prompt-condition pairs across chunks"
+                    )
+                pairs.add(pair)
 
     precision = json.loads(
         (runtime / "manifests" / "precision-mamba_130m.json").read_text(
@@ -98,10 +111,17 @@ def _validate_restored(status: dict[str, Any]) -> dict[str, Any]:
     return {
         "source_commit": status["commit"],
         "e04_rows": observed_rows.get("raw/E04_adaptive.jsonl", 0),
-        "e04_expected_pre_detector_rows": 4000,
-        "e04_completion_fraction": observed_rows.get("raw/E04_adaptive.jsonl", 0)
-        / 4000,
+        "e04_pre_detector_reference_rows": 4000,
+        "e04_pre_detector_completion_fraction": min(
+            1.0, observed_rows.get("raw/E04_adaptive.jsonl", 0) / 4000
+        ),
         "consumed_gpu_seconds": status["budget"]["consumed_gpu_seconds"],
+        "automatic_status": status["automatic_report"]["status"],
+        "stopped_stage": status["automatic_report"].get("stopped_stage"),
+        "chunk_rows": {
+            experiment_id: len(pairs)
+            for experiment_id, pairs in sorted(chunk_pairs.items())
+        },
     }
 
 
