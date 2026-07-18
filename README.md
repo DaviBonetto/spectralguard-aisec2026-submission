@@ -83,8 +83,9 @@ Phase 3 uses exactly two clean notebooks and a Git-ignored runtime directory:
    audits all 1,500 prompt boundaries, proves batch-one/batched equivalence for
    restored evidence, and resumes atomic checkpoints under a three-hour
    session timebox plus an 8.25 GPU-hour cumulative research guard. Recurrent
-   Mamba/hybrid batches contain only exactly equal token lengths; Transformer padding is
-   attention-masked, and CUDA OOMs halve only the affected batch.
+   Mamba/hybrid batches contain only exactly equal token lengths. Transformer
+   batches are length-sorted and attention-masked to reduce padding without
+   changing outputs; CUDA OOMs halve only the affected batch.
 2. `notebooks/02_phase3_analysis.ipynb` applies the frozen split policy
    (calibration for fitting, validation for threshold selection, test for final
    reporting), computes uncertainty, and creates the final archive with one
@@ -107,7 +108,8 @@ python scripts/verify_phase3_resume.py --expected-sha256 <sha256> --expected-e01
 ```
 
 After enabling the H100, Notebook 1 installs and validates the frozen CUDA
-extensions before resuming. Notebook 2 explicitly requires a CPU runtime.
+extensions before resuming. Notebook 2 should be run on CPU to avoid cost, but
+does not impose a hardware lock.
 
 The two downloadable outputs are written to
 `Experiments/exports/phase3_experiments.zip` and

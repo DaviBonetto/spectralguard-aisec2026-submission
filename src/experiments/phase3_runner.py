@@ -530,6 +530,22 @@ def _conditions_for(experiment_id: str, paths: Phase3Paths) -> dict[str, str]:
     return conditions
 
 
+def _sort_rows_for_transformer_batch(
+    loaded: Any, rows: list[dict[str, Any]], trigger: str
+) -> list[dict[str, Any]]:
+    """Return a stable input-length ordering to minimize masked padding."""
+    return sorted(
+        rows,
+        key=lambda row: len(
+            loaded.tokenizer(
+                inject_trigger(row, trigger),
+                truncation=True,
+                max_length=int(row.get("max_input_tokens", 768)),
+            )["input_ids"]
+        ),
+    )
+
+
 def run_smoke_cell(*, confirmation: str) -> dict[str, Any]:
     """Exercise real tokenization, spectrum, BOE, generation, scoring and export paths."""
     config, paths = _config_and_paths()
@@ -836,6 +852,11 @@ def run_model_cell(
                         for _, values in sorted(exact_length_groups.items())
                     ]
                 else:
+                    # Transformer masks make length-sorted batching exact while
+                    # avoiding the worst-case padding cost of dataset order.
+                    group_rows = _sort_rows_for_transformer_batch(
+                        loaded, group_rows, trigger
+                    )
                     grouped_batches = [group_rows]
                 batch_size = 1 if diagnostic else configured_batch_size
                 for homogeneous_rows in grouped_batches:

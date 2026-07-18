@@ -30,9 +30,9 @@ execution:
       mamba_790m: 32
       mamba_1_4b: 16
       mamba_2_8b: 16
-      pythia_1_4b: 16
-      pythia_2_8b: 16
-      gpt2_xl: 16
+      pythia_1_4b: 64
+      pythia_2_8b: 32
+      gpt2_xl: 32
       zamba2_2_7b: 12
 
 dataset:

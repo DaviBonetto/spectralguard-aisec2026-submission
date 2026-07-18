@@ -69,6 +69,11 @@ def _validate_restored(status: dict[str, Any]) -> dict[str, Any]:
         path = runtime / relative
         if not path.is_file() or path.stat().st_size != int(expected_size):
             raise RuntimeError(f"restored file mismatch: {relative}")
+        if path.suffix == ".json":
+            try:
+                json.loads(path.read_text(encoding="utf-8"))
+            except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+                raise RuntimeError(f"restored JSON is invalid: {relative}") from exc
 
     observed_rows: dict[str, int] = {}
     chunk_pairs: dict[str, set[tuple[str, str]]] = {}

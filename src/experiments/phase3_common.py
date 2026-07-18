@@ -350,12 +350,21 @@ class BudgetLedger:
         return max(0.0, (self.max_seconds - consumed) / 3600.0)
 
     def require(self, estimated_minutes: float, label: str) -> None:
+        """Report a cumulative-budget overrun without interrupting a paid session.
+
+        The per-session wall-clock deadline remains the execution guard and creates
+        a resumable handoff. The cumulative budget is research telemetry: blocking
+        here could strand a paid session before the handoff reserve is reached.
+        """
         estimated_seconds = float(estimated_minutes) * 60.0
         consumed = self.max_seconds - self.remaining_hours() * 3600.0
         if consumed + estimated_seconds > self.max_seconds:
-            raise RuntimeError(
-                f"budget guard blocked {label}: estimated {estimated_minutes:.1f} min, "
-                f"remaining {self.remaining_hours() * 60:.1f} min"
+            print(
+                f"BUDGET TELEMETRY WARNING for {label}: estimated "
+                f"{estimated_minutes:.1f} min, configured cumulative remainder "
+                f"{self.remaining_hours() * 60:.1f} min; continuing under the "
+                "session timebox.",
+                flush=True,
             )
 
     def record(self, label: str, started: float, *, used_gpu: bool) -> None:

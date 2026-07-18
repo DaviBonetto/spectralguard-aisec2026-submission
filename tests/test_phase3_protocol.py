@@ -355,6 +355,43 @@ def test_budget_ledger_counts_prior_kernel_sessions(tmp_path: Path):
     assert ledger.remaining_hours() == pytest.approx(0.75)
 
 
+def test_budget_ledger_warns_without_blocking_session(tmp_path: Path, capsys):
+    paths = Phase3Paths(root=tmp_path, runtime=tmp_path)
+    (tmp_path / "manifests").mkdir()
+    ledger = BudgetLedger(paths, max_gpu_hours=1.0)
+    ledger.payload["events"] = [
+        {
+            "label": "prior-kernel",
+            "elapsed_seconds": 3590.0,
+            "used_gpu": True,
+            "session_id": "different-session",
+        }
+    ]
+    ledger.require(estimated_minutes=2.0, label="resume")
+    assert "BUDGET TELEMETRY WARNING" in capsys.readouterr().out
+
+
+def test_transformer_batch_rows_are_stably_sorted_by_token_length():
+    import src.experiments.phase3_runner as runner
+
+    class Tokenizer:
+        def __call__(self, prompt, **_kwargs):
+            return {"input_ids": prompt.split()}
+
+    loaded = type("Loaded", (), {"tokenizer": Tokenizer()})()
+    rows = [
+        {
+            "prompt_id": "long",
+            "clean_prompt": "one two three",
+            "question": "three",
+        },
+        {"prompt_id": "short-a", "clean_prompt": "one", "question": "one"},
+        {"prompt_id": "short-b", "clean_prompt": "two", "question": "two"},
+    ]
+    ordered = runner._sort_rows_for_transformer_batch(loaded, rows, "")
+    assert [row["prompt_id"] for row in ordered] == ["short-a", "short-b", "long"]
+
+
 def test_timebox_handoff_archive_contains_status_and_atomic_chunks(
     monkeypatch, tmp_path: Path
 ):
