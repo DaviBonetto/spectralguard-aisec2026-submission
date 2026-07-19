@@ -1,0 +1,2 @@
+comparison,b,c,statistic,p_value,n,v2_accuracy,v3_accuracy,paired_accuracy_difference,paired_difference_ci_low,paired_difference_ci_high,bootstrap_resamples
+adaptive_v2_vs_v3_correctness,4,5,0.0,1.0,300,0.013333333333333334,0.016666666666666666,-0.0033333333333333322,-0.02333333333333333,0.016666666666666666,2000

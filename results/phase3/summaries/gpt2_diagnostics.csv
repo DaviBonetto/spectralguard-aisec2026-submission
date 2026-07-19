@@ -1,0 +1,4 @@
+model_key,condition,n,attention_entropy_mean,kv_stable_rank_mean
+gpt2_xl,benign_control,64,0.4109160513132034,21.19247167122861
+gpt2_xl,clean,64,0.4104141543308894,20.865084438274305
+gpt2_xl,hispa_original,64,0.40926527703413745,21.224283859754603

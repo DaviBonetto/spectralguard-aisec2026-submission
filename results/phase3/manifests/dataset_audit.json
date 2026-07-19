@@ -1,0 +1,31 @@
+{
+  "dataset_sha256": "dfa7c812853d67ed4c4b9b2aaf9aa4d2f7501cd477e2cde2226e7a3218ecbe9b",
+  "passed": true,
+  "row_count": 1500,
+  "schema_version": 2,
+  "task_split_counts": {
+    "associative_recall": {
+      "calibration": 140,
+      "test": 460,
+      "validation": 100
+    },
+    "gsm8k": {
+      "calibration": 90,
+      "test": 300,
+      "validation": 60
+    },
+    "humaneval": {
+      "calibration": 30,
+      "test": 100,
+      "validation": 20
+    },
+    "longbench_qasper": {
+      "calibration": 40,
+      "test": 140,
+      "validation": 20
+    }
+  },
+  "unique_attack_boundaries": 1500,
+  "unique_prompt_ids": 1500,
+  "unique_prompts": 1500
+}

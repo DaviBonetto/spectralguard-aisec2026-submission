@@ -429,6 +429,14 @@ def analyze_phase3() -> dict[str, Any]:
     )
     b, c = int(paired["v2_only_correct"].sum()), int(paired["v3_only_correct"].sum())
     statistic = (abs(b - c) - 1) ** 2 / (b + c) if b + c else 0.0
+    v2_correct = paired["v2_correct"].astype(float).to_numpy()
+    v3_correct = paired["v3_correct"].astype(float).to_numpy()
+    paired_ci_low, paired_ci_high = _bootstrap_drop(
+        v2_correct,
+        v3_correct,
+        seed=int(config["seeds"][0]),
+        resamples=int(config["protocol"]["bootstrap_resamples"]),
+    )
     mcnemar = pd.DataFrame(
         [
             {
@@ -437,6 +445,17 @@ def analyze_phase3() -> dict[str, Any]:
                 "c": c,
                 "statistic": statistic,
                 "p_value": float(chi2.sf(statistic, 1)) if b + c else 1.0,
+                "n": len(paired),
+                "v2_accuracy": float(v2_correct.mean()),
+                "v3_accuracy": float(v3_correct.mean()),
+                "paired_accuracy_difference": float(
+                    v2_correct.mean() - v3_correct.mean()
+                ),
+                "paired_difference_ci_low": paired_ci_low,
+                "paired_difference_ci_high": paired_ci_high,
+                "bootstrap_resamples": int(
+                    config["protocol"]["bootstrap_resamples"]
+                ),
             }
         ]
     )
@@ -454,11 +473,17 @@ def analyze_phase3() -> dict[str, Any]:
         )
         y = group["correct"].to_numpy(float)
         slope, intercept = np.polyfit(x, y, 1)
-        logit_slope, logit_p = math.nan, math.nan
+        logit_slope, logit_p, mcfadden_pseudo_r2 = math.nan, math.nan, math.nan
         if np.unique(y).size == 2:
             try:
-                fitted = sm.Logit(y, sm.add_constant(x)).fit(disp=False)
+                x_scale = float(np.std(x))
+                if x_scale == 0.0:
+                    raise ValueError("spectral radius has zero variance")
+                standardized_x = (x - float(np.mean(x))) / x_scale
+                fitted = sm.Logit(y, sm.add_constant(standardized_x)).fit(disp=False)
                 logit_slope, logit_p = float(fitted.params[1]), float(fitted.pvalues[1])
+                null = sm.Logit(y, np.ones((len(y), 1))).fit(disp=False)
+                mcfadden_pseudo_r2 = float(1.0 - fitted.llf / null.llf)
             except (ValueError, np.linalg.LinAlgError):
                 pass
         regressions.append(
@@ -470,6 +495,7 @@ def analyze_phase3() -> dict[str, Any]:
                 "pearson_r": float(np.corrcoef(x, y)[0, 1]) if np.std(y) else 0.0,
                 "logit_slope": logit_slope,
                 "logit_p_value": logit_p,
+                "mcfadden_pseudo_r2": mcfadden_pseudo_r2,
             }
         )
     outputs["rho_accuracy_regression.csv"] = _save(
@@ -483,10 +509,16 @@ def analyze_phase3() -> dict[str, Any]:
         .groupby("task", group_keys=False)
         .head(per_task)["prompt_id"]
     )
-    transfer_frame = frame[
-        frame["model_key"].isin({"mamba_1_4b", "mamba_2_8b", "pythia_1_4b"})
-        & frame["prompt_id"].isin(transfer_ids)
-    ]
+    transfer_frame = pd.concat(
+        [
+            frame[frame["model_key"].isin({"mamba_1_4b", "pythia_1_4b"})],
+            frame[
+                (frame["model_key"] == "mamba_2_8b")
+                & frame["prompt_id"].isin(transfer_ids)
+            ],
+        ],
+        ignore_index=True,
+    )
     transfer_metrics = _condition_metrics(transfer_frame, config)
     outputs["cross_model_transfer_wilson.csv"] = _save(
         paths,
@@ -540,12 +572,34 @@ def analyze_phase3() -> dict[str, Any]:
     import matplotlib.pyplot as plt
 
     figure, axis = plt.subplots(figsize=(5.5, 4.0))
-    for name, group in pareto.groupby("tradeoff_point"):
-        axis.scatter(group["rho_mean"], group["task_loss"], label=name, alpha=0.8)
+    tradeoff_order = [
+        item["name"] for item in config["attacks"]["pareto"]["tradeoff_points"]
+    ]
+    summary = (
+        pareto.groupby("tradeoff_point")
+        .agg(
+            rho_mean=("rho_mean", "mean"),
+            task_loss_mean=("task_loss", "mean"),
+            task_loss_low=("task_loss", lambda value: float(np.quantile(value, 0.025))),
+            task_loss_high=("task_loss", lambda value: float(np.quantile(value, 0.975))),
+        )
+        .reindex(tradeoff_order)
+    )
+    x = np.arange(len(summary))
+    axis.plot(x, summary["task_loss_mean"], marker="o", color="tab:blue")
+    axis.fill_between(
+        x,
+        summary["task_loss_low"],
+        summary["task_loss_high"],
+        alpha=0.25,
+        color="tab:blue",
+        label="95% restart band",
+    )
+    axis.set_xticks(x, tradeoff_order, rotation=25, ha="right")
     axis.set(
-        xlabel="Mean spectral radius",
+        xlabel="Attack trade-off setting",
         ylabel="Task loss",
-        title="Calibration Pareto restarts",
+        title="Pareto frontier across five independent restarts",
     )
     axis.legend(fontsize=7)
     figure.tight_layout()
@@ -673,12 +727,19 @@ def analyze_phase3() -> dict[str, Any]:
     )
     outputs["statistical_power.csv"] = _save(paths, "statistical_power.csv", power)
 
+    gpt2_lexical = lexical[lexical["model_key"] == "gpt2_xl"]
+    if gpt2_lexical.empty:
+        raise RuntimeError("GPT-2 lexical control is absent")
     report = {
         "schema_version": 2,
         "raw_rows": len(frame),
         "models": sorted(frame["model_key"].unique()),
         "seeds": config["seeds"],
-        "lexical_auc_gate_passed": bool(
+        "gpt2_lexical_auc_gate_passed": bool(
+            (gpt2_lexical["test_auc"] < gpt2_lexical["auc_ceiling"]).all()
+        ),
+        "gpt2_lexical_auc": float(gpt2_lexical["test_auc"].mean()),
+        "lexical_auc_all_models_below_ceiling": bool(
             (lexical["test_auc"] < lexical["auc_ceiling"]).all()
         ),
         "threshold_policy": "fit calibration; select threshold validation; evaluate test once",

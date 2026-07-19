@@ -114,5 +114,13 @@ does not impose a hardware lock.
 The two downloadable outputs are written to
 `Experiments/exports/phase3_experiments.zip` and
 `Experiments/exports/phase3_final.zip`. Model weights, credentials, notebook
-outputs, and partial caches are never included. Phase 3 is not declared closed
-until the real H100 outputs and both ZIPs pass the final independent audit.
+outputs, and partial caches are never included. The completed campaign contains
+19,300 confirmatory rows across E01--E08. Its lightweight tables, acceptance
+matrix, Pareto figure, archive hashes, and scope-qualified interpretation are
+published under `results/phase3/`; raw outputs remain external to Git.
+
+Verify the tracked Phase 3 evidence without a GPU:
+
+```powershell
+.\.venv\Scripts\python.exe scripts\verify_phase3_results.py
+```

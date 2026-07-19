@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "execution_commit": "611b2176191d5f7e2bf76f61104f939ce60c5741",
+  "input_archives": {
+    "phase3_experiments.zip": {
+      "bytes": 165480233,
+      "sha256": "6f1f27fee6916c3c67cfae3d51173d323fd2efa31b30137ccb95a0b3c5d763f7",
+      "internal_sha256_entries_verified": 80,
+      "jsonl_rows_verified": 21660
+    },
+    "phase3_final.zip": {
+      "bytes": 187838,
+      "sha256": "1b04ec0c8f7689124112d400ada3875825a60d5f70d02ecf135c5b27361d7a5d",
+      "internal_sha256_entries_verified": 60
+    }
+  },
+  "confirmatory_raw_rows": 19300,
+  "gpu_seconds_recorded": 26725.894769025996,
+  "post_run_analysis": {
+    "purpose": "semantic gate hardening and correction of transfer aggregation",
+    "uses_gpu": false,
+    "corrected_final_zip_sha256": "8fb0aa51e5519e24fc9d896f8c9531868c85efc114e5e71ddb01d750f02859c8"
+  }
+}

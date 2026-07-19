@@ -1,0 +1,108 @@
+{
+  "consumed_gpu_seconds": 26725.894769025996,
+  "events": [
+    {
+      "elapsed_seconds": 8.972151639999993,
+      "label": "smoke",
+      "session_id": "13156-1784248584881926479",
+      "used_gpu": true
+    },
+    {
+      "elapsed_seconds": 2.5409767310000007,
+      "label": "precision-gate",
+      "session_id": "13156-1784248584881926479",
+      "used_gpu": true
+    },
+    {
+      "elapsed_seconds": 1023.8611158430001,
+      "label": "official-hispa-selection",
+      "session_id": "25105-1784249155651229249",
+      "used_gpu": true
+    },
+    {
+      "elapsed_seconds": 349.726596899,
+      "label": "attack-gradient_guided",
+      "session_id": "25105-1784249155651229249",
+      "used_gpu": true
+    },
+    {
+      "elapsed_seconds": 351.1498514540003,
+      "label": "attack-adaptive_v2",
+      "session_id": "25105-1784249155651229249",
+      "used_gpu": true
+    },
+    {
+      "elapsed_seconds": 5204.138822708001,
+      "label": "E04_adaptive",
+      "session_id": "25105-1784249155651229249",
+      "used_gpu": true
+    },
+    {
+      "elapsed_seconds": 3846.783471746,
+      "label": "E04_adaptive",
+      "session_id": "4791-1784293275310555601",
+      "used_gpu": true
+    },
+    {
+      "elapsed_seconds": 371.96755195700007,
+      "label": "attack-adaptive_v3",
+      "session_id": "4791-1784293275310555601",
+      "used_gpu": true
+    },
+    {
+      "elapsed_seconds": 1864.8989276940001,
+      "label": "attack-pareto",
+      "session_id": "4791-1784293275310555601",
+      "used_gpu": true
+    },
+    {
+      "elapsed_seconds": 1038.3694424390005,
+      "label": "E04_adaptive",
+      "session_id": "4791-1784293275310555601",
+      "used_gpu": true
+    },
+    {
+      "elapsed_seconds": 3471.9661468489994,
+      "label": "E01_main_mamba",
+      "session_id": "4791-1784293275310555601",
+      "used_gpu": true
+    },
+    {
+      "elapsed_seconds": 3217.525093368,
+      "label": "E01_main_mamba",
+      "session_id": "1945-1784473171683825923",
+      "used_gpu": true
+    },
+    {
+      "elapsed_seconds": 754.2542719059998,
+      "label": "E02_gpt2_control",
+      "session_id": "1945-1784473171683825923",
+      "used_gpu": true
+    },
+    {
+      "elapsed_seconds": 130.48791417599932,
+      "label": "E03_pythia_control",
+      "session_id": "1945-1784473171683825923",
+      "used_gpu": true
+    },
+    {
+      "elapsed_seconds": 1847.4880774429994,
+      "label": "E05_transfer_mamba_1_4b",
+      "session_id": "1945-1784473171683825923",
+      "used_gpu": true
+    },
+    {
+      "elapsed_seconds": 51.937316895999174,
+      "label": "E07_transfer_pythia_1_4b",
+      "session_id": "1945-1784473171683825923",
+      "used_gpu": true
+    },
+    {
+      "elapsed_seconds": 3189.827039277,
+      "label": "E08_zamba",
+      "session_id": "1945-1784473171683825923",
+      "used_gpu": true
+    }
+  ],
+  "schema_version": 1
+}

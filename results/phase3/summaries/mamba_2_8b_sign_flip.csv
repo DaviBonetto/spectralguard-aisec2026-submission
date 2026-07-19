@@ -1,0 +1,4 @@
+comparison,n,mean_delta_rho,cohen_d_paired
+clean_vs_benign_control,1000,2.2129528224468232e-07,2.1170540116219883
+clean_vs_hispa_original,1000,4.0127895772457123e-07,2.4219994184752416
+clean_vs_gradient_guided,1000,1.0246122255921365e-06,2.6177548479055885

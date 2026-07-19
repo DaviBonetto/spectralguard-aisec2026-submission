@@ -1,0 +1,78 @@
+{
+  "experiments": [
+    {
+      "id": "E01_main_mamba",
+      "model": "mamba_2_8b",
+      "test_n": 1000
+    },
+    {
+      "id": "E02_gpt2_control",
+      "model": "gpt2_xl",
+      "test_n": 1000
+    },
+    {
+      "id": "E03_pythia_control",
+      "model": "pythia_2_8b",
+      "test_n": 300
+    },
+    {
+      "id": "E04_adaptive",
+      "model": "mamba_790m",
+      "test_n": 300
+    },
+    {
+      "id": "E05_transfer_mamba_1_4b",
+      "model": "mamba_1_4b",
+      "test_n": 200
+    },
+    {
+      "derived_from": "E01_main_mamba",
+      "id": "E06_transfer_mamba_2_8b",
+      "model": "mamba_2_8b",
+      "test_n": 200
+    },
+    {
+      "id": "E07_transfer_pythia_1_4b",
+      "model": "pythia_1_4b",
+      "test_n": 200
+    },
+    {
+      "id": "E08_zamba",
+      "model": "zamba2_2_7b",
+      "test_n": 300
+    }
+  ],
+  "mode": "full",
+  "note": "Five seeds fit detectors; five independent restarts optimize each attack recipe.",
+  "pareto_optimizations": 25,
+  "schema_version": 2,
+  "seeds": [
+    42,
+    123,
+    456,
+    789,
+    2026
+  ],
+  "tasks": {
+    "associative_recall": {
+      "calibration": 140,
+      "test": 460,
+      "validation": 100
+    },
+    "gsm8k": {
+      "calibration": 90,
+      "test": 300,
+      "validation": 60
+    },
+    "humaneval": {
+      "calibration": 30,
+      "test": 100,
+      "validation": 20
+    },
+    "longbench_qasper": {
+      "calibration": 40,
+      "test": 140,
+      "validation": 20
+    }
+  }
+}

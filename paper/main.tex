@@ -197,14 +197,40 @@ latter remains an empirical question for the attack campaign.
 \section{Experimental Methodology}
 
 \paragraph{Compute and model provenance.}
-Every model load must use an immutable revision SHA, and every run record must
-contain its seed, configuration hash, package versions, model identifier, and
-model revision.  The foundation audit used CPU inference only.  GPU-hours,
-hardware, wall-clock duration, and the corresponding carbon estimate will be
-aggregated from run manifests after the experiments are executed; no final
-compute or emissions value is claimed before then.
+Every model load uses an immutable revision SHA, and each run records its seed,
+configuration hash, package versions, model identifier, and model revision.
+The confirmatory campaign evaluated 19,300 rows across seven models and four
+tasks on NVIDIA H100 GPUs, recording 26,725.9 GPU-seconds across resumable
+sessions. Detector fitting uses calibration data, threshold selection uses
+validation data, and the test split is evaluated once. Accuracy intervals are
+Wilson intervals; paired accuracy drops and effect sizes use 2,000 bootstrap
+resamples. We control the three primary paired tests with Benjamini--Hochberg
+at FDR 0.05 and also report paired Wilcoxon tests.
 
 \section{Results and Analysis}
+
+The repaired GPT-2 control no longer exposes the legacy template artifact: a
+classifier using only input length and prompt negative log-likelihood obtains
+AUC 0.533, below the preregistered 0.65 ceiling. This result removes the basis
+for the earlier categorical SSM-versus-Transformer claim; architecture-level
+conclusions are deferred to the complete analysis.
+
+Under one calibration/validation/test protocol, the multilayer SpectralGuard
+detector obtains F1 0.806 and mean AUC 0.887 over five prescribed seeds. The
+same fixed data and deterministic logistic fit produce identical values across
+those seeds. A CLASP-style BOE+XGBoost reimplementation using the published
+design and hyperparameters, but not official pretrained weights, obtains F1
+0.969 and mean AUC 0.997. We therefore make no superiority claim.
+
+Adaptive v2 and detector-aware v3 remain statistically indistinguishable on
+the same 300 prompts: their accuracies are 1.33\% and 1.67\%, respectively
+(paired difference $-0.33$ percentage points, 95\% bootstrap CI
+$[-2.33,1.67]$; McNemar $p=1.0$). Logistic fits of correctness on standardized
+mean spectral radius yield McFadden pseudo-$R^2$ values from 0.0089 to 0.0337,
+indicating weak explanatory power for radius alone. The legacy Mamba-2.8B sign
+reversal does not recur: clean-minus-perturbed $\Delta\rho$ is positive for
+benign, HiSPA-original, and gradient-guided comparisons. Cross-model transfer
+is reported with $N=200$ and Wilson intervals for every model and condition.
 
 \section{Adaptive Threat Model}
 
@@ -218,6 +244,12 @@ coverage does not establish that spectral collapse is necessary for task
 failure.  The structural counterexample proves that a radius-only monitor is
 incomplete outside its stated assumption, while not proving token-level
 reachability in the learned model.
+The confirmatory detector result is also weaker than the CLASP-style
+reimplementation under the common protocol. The latter is a reimplementation,
+not an evaluation of official pretrained CLASP weights. Low task accuracies on
+several exact-answer cells limit behavioral interpretation, and the five
+SpectralGuard seed labels do not create data-split independence because the
+underlying split and deterministic estimator are fixed.
 
 \section{Conclusion}
 % PENDING: depends on Phase 3.1 and Phase 7.

@@ -1,0 +1,94 @@
+{
+  "comparisons": [
+    {
+      "batch_size": 4,
+      "condition": "clean",
+      "correct_equal": true,
+      "prompt_id": "p3-longbench_qasper-0733f0721efba777",
+      "prompt_nll_relative_error": 4.976915318588583e-05,
+      "rho_relative_error": 0.0,
+      "task": "longbench_qasper",
+      "task_score_equal": false
+    },
+    {
+      "batch_size": 4,
+      "condition": "clean",
+      "correct_equal": true,
+      "prompt_id": "p3-longbench_qasper-07bc24e5adbf70c6",
+      "prompt_nll_relative_error": 5.649126703227872e-05,
+      "rho_relative_error": 0.0,
+      "task": "longbench_qasper",
+      "task_score_equal": true
+    },
+    {
+      "batch_size": 4,
+      "condition": "clean",
+      "correct_equal": true,
+      "prompt_id": "p3-longbench_qasper-0a194c8f96069a2f",
+      "prompt_nll_relative_error": 5.363274362171879e-05,
+      "rho_relative_error": 0.0,
+      "task": "longbench_qasper",
+      "task_score_equal": true
+    },
+    {
+      "batch_size": 4,
+      "condition": "clean",
+      "correct_equal": true,
+      "prompt_id": "p3-longbench_qasper-0a68af622be6f65b",
+      "prompt_nll_relative_error": 5.0720883643438086e-05,
+      "rho_relative_error": 0.0,
+      "task": "longbench_qasper",
+      "task_score_equal": true
+    },
+    {
+      "batch_size": 4,
+      "condition": "adaptive_v2",
+      "correct_equal": true,
+      "prompt_id": "p3-longbench_qasper-0733f0721efba777",
+      "prompt_nll_relative_error": 4.395656686219886e-05,
+      "rho_relative_error": 0.0,
+      "task": "longbench_qasper",
+      "task_score_equal": false
+    },
+    {
+      "batch_size": 4,
+      "condition": "adaptive_v2",
+      "correct_equal": true,
+      "prompt_id": "p3-longbench_qasper-07bc24e5adbf70c6",
+      "prompt_nll_relative_error": 5.1054672089674695e-05,
+      "rho_relative_error": 0.0,
+      "task": "longbench_qasper",
+      "task_score_equal": true
+    },
+    {
+      "batch_size": 4,
+      "condition": "adaptive_v2",
+      "correct_equal": true,
+      "prompt_id": "p3-longbench_qasper-0a194c8f96069a2f",
+      "prompt_nll_relative_error": 4.842924980688391e-05,
+      "rho_relative_error": 0.0,
+      "task": "longbench_qasper",
+      "task_score_equal": true
+    },
+    {
+      "batch_size": 4,
+      "condition": "adaptive_v2",
+      "correct_equal": true,
+      "prompt_id": "p3-longbench_qasper-0a68af622be6f65b",
+      "prompt_nll_relative_error": 4.473626988625224e-05,
+      "rho_relative_error": 0.0,
+      "task": "longbench_qasper",
+      "task_score_equal": true
+    }
+  ],
+  "max_prompt_nll_relative_error": 5.649126703227872e-05,
+  "max_rho_relative_error": 0.0,
+  "passed": true,
+  "policy_note": "Correctness 8/8, spectral rho exact, NLL within tolerance; minor Qasper token-F1 variation did not change correctness.",
+  "prompt_nll_relative_tolerance": 0.001,
+  "reuse_decision": "RESTORED_ROWS_COMPATIBLE",
+  "rho_relative_tolerance": 0.001,
+  "schema_version": 1,
+  "status": "PASS_PRIMARY_ENDPOINT_EQUIVALENCE",
+  "task_score_exact_agreement": 0.75
+}
