@@ -1,0 +1,414 @@
+{
+  "items": [
+    {
+      "artifacts": [
+        {
+          "columns": [
+            "model_key",
+            "condition",
+            "n",
+            "attention_entropy_mean",
+            "kv_stable_rank_mean"
+          ],
+          "name": "gpt2_diagnostics.csv",
+          "rows": 3
+        },
+        {
+          "columns": [
+            "model_key",
+            "seed",
+            "test_auc",
+            "auc_ceiling"
+          ],
+          "name": "lexical_control.csv",
+          "rows": 15
+        }
+      ],
+      "item": "3.1",
+      "status": "PASS"
+    },
+    {
+      "artifacts": [
+        {
+          "columns": [
+            "detector",
+            "n",
+            "precision",
+            "recall",
+            "f1",
+            "auc_mean"
+          ],
+          "name": "table10_unified.csv",
+          "rows": 2
+        }
+      ],
+      "item": "3.2",
+      "status": "PASS"
+    },
+    {
+      "artifacts": [
+        {
+          "columns": [
+            "seed",
+            "threshold",
+            "threshold_selected_on",
+            "n_calibration",
+            "n_validation",
+            "n_test"
+          ],
+          "name": "threshold_provenance.csv",
+          "rows": 5
+        }
+      ],
+      "item": "3.3",
+      "status": "PASS"
+    },
+    {
+      "artifacts": [
+        {
+          "columns": [
+            "seed",
+            "attack_success",
+            "n",
+            "f1"
+          ],
+          "name": "attack_success_stratified_f1.csv",
+          "rows": 10
+        }
+      ],
+      "item": "3.4",
+      "status": "PASS"
+    },
+    {
+      "artifacts": [
+        {
+          "columns": [
+            "prompt_id",
+            "v2_correct",
+            "v2_task_score",
+            "v3_correct",
+            "v3_task_score",
+            "v2_only_correct",
+            "v3_only_correct"
+          ],
+          "name": "adaptive_v2_v3_paired.csv",
+          "rows": 300
+        },
+        {
+          "columns": [
+            "comparison",
+            "b",
+            "c",
+            "statistic",
+            "p_value",
+            "n",
+            "v2_accuracy",
+            "v3_accuracy",
+            "paired_accuracy_difference",
+            "paired_difference_ci_low",
+            "paired_difference_ci_high",
+            "bootstrap_resamples"
+          ],
+          "name": "mcnemar_tests.csv",
+          "rows": 1
+        }
+      ],
+      "item": "3.5",
+      "status": "PASS"
+    },
+    {
+      "artifacts": [
+        {
+          "columns": [
+            "model_key",
+            "condition",
+            "n",
+            "accuracy",
+            "accuracy_wilson_low",
+            "accuracy_wilson_high",
+            "paired_accuracy_drop",
+            "paired_drop_ci_low",
+            "paired_drop_ci_high",
+            "attack_success_rate"
+          ],
+          "name": "table10_bootstrap_ci.csv",
+          "rows": 29
+        }
+      ],
+      "item": "3.6",
+      "status": "PASS"
+    },
+    {
+      "artifacts": [
+        {
+          "columns": [
+            "condition",
+            "n",
+            "linear_slope",
+            "linear_intercept",
+            "pearson_r",
+            "logit_slope",
+            "logit_p_value",
+            "mcfadden_pseudo_r2"
+          ],
+          "name": "rho_accuracy_regression.csv",
+          "rows": 4
+        }
+      ],
+      "item": "3.7",
+      "status": "PASS"
+    },
+    {
+      "artifacts": [
+        {
+          "columns": [
+            "model_key",
+            "condition",
+            "n",
+            "accuracy",
+            "accuracy_wilson_low",
+            "accuracy_wilson_high",
+            "paired_accuracy_drop",
+            "paired_drop_ci_low",
+            "paired_drop_ci_high",
+            "attack_success_rate"
+          ],
+          "name": "cross_model_transfer_wilson.csv",
+          "rows": 12
+        }
+      ],
+      "item": "3.8",
+      "status": "PASS"
+    },
+    {
+      "artifacts": [
+        {
+          "columns": [
+            "model_key",
+            "condition",
+            "n",
+            "accuracy",
+            "accuracy_wilson_low",
+            "accuracy_wilson_high",
+            "paired_accuracy_drop",
+            "paired_drop_ci_low",
+            "paired_drop_ci_high",
+            "attack_success_rate"
+          ],
+          "name": "hispa_head_to_head.csv",
+          "rows": 13
+        }
+      ],
+      "item": "3.9",
+      "status": "PASS"
+    },
+    {
+      "artifacts": [
+        {
+          "columns": [
+            "task",
+            "condition",
+            "n",
+            "accuracy",
+            "task_score"
+          ],
+          "name": "four_task_controls.csv",
+          "rows": 24
+        },
+        {
+          "columns": [
+            "experiment",
+            "absolute_nll_difference",
+            "attack_nll",
+            "attack_text",
+            "control_nll",
+            "control_official_index",
+            "control_source",
+            "control_text",
+            "token_length"
+          ],
+          "name": "control_matching_audit.csv",
+          "rows": 7
+        }
+      ],
+      "item": "3.10",
+      "status": "PASS"
+    },
+    {
+      "artifacts": [
+        {
+          "columns": [
+            "schema_version",
+            "detector",
+            "seed",
+            "feature_names",
+            "feature_mean",
+            "feature_scale",
+            "weights",
+            "bias",
+            "threshold",
+            "threshold_selected_on",
+            "validation_f1",
+            "test_f1",
+            "test_auc",
+            "n_calibration",
+            "n_validation",
+            "n_test"
+          ],
+          "name": "headline_multiseed.csv",
+          "rows": 5
+        }
+      ],
+      "item": "3.11",
+      "status": "PASS"
+    },
+    {
+      "artifacts": [
+        {
+          "columns": [
+            "hazard",
+            "rho_mean",
+            "task_loss",
+            "tradeoff_point",
+            "restart",
+            "seed"
+          ],
+          "name": "pareto_frontier.csv",
+          "rows": 25
+        },
+        {
+          "columns": null,
+          "name": "pareto_frontier_band.pdf",
+          "rows": null
+        }
+      ],
+      "item": "3.12",
+      "status": "PASS"
+    },
+    {
+      "artifacts": [
+        {
+          "columns": [
+            "comparison",
+            "test",
+            "statistic",
+            "p_value",
+            "n",
+            "p_value_bh",
+            "rejected_at_fdr"
+          ],
+          "name": "multiple_comparisons_bh.csv",
+          "rows": 3
+        }
+      ],
+      "item": "3.13",
+      "status": "PASS"
+    },
+    {
+      "artifacts": [
+        {
+          "columns": [
+            "comparison",
+            "test",
+            "statistic",
+            "p_value",
+            "n"
+          ],
+          "name": "nonparametric_tests.csv",
+          "rows": 3
+        }
+      ],
+      "item": "3.14",
+      "status": "PASS"
+    },
+    {
+      "artifacts": [
+        {
+          "columns": [
+            "comparison",
+            "n",
+            "cohen_d_paired",
+            "cohen_d_ci_low",
+            "cohen_d_ci_high",
+            "mean_delta_rho",
+            "ttest_statistic",
+            "ttest_p_value",
+            "bootstrap_resamples"
+          ],
+          "name": "cohen_d_bootstrap.csv",
+          "rows": 3
+        }
+      ],
+      "item": "3.15",
+      "status": "PASS"
+    },
+    {
+      "artifacts": [
+        {
+          "columns": [
+            "schema_version",
+            "detector",
+            "seed",
+            "feature_names",
+            "feature_mean",
+            "feature_scale",
+            "weights",
+            "bias",
+            "threshold",
+            "threshold_selected_on",
+            "validation_f1",
+            "test_f1",
+            "test_auc",
+            "n_calibration",
+            "n_validation",
+            "n_test",
+            "official_design_elements",
+            "not_official_pretrained_weights",
+            "feature_count"
+          ],
+          "name": "clasp_common_protocol.csv",
+          "rows": 10
+        }
+      ],
+      "item": "3.16",
+      "status": "PASS"
+    },
+    {
+      "artifacts": [
+        {
+          "columns": [
+            "comparison",
+            "n",
+            "mean_delta_rho",
+            "cohen_d_paired"
+          ],
+          "name": "mamba_2_8b_sign_flip.csv",
+          "rows": 3
+        }
+      ],
+      "item": "3.17",
+      "status": "PASS"
+    },
+    {
+      "artifacts": [
+        {
+          "columns": [
+            "smallest_observed_absolute_effect",
+            "target_power",
+            "alpha",
+            "required_n_per_group",
+            "available_test_n"
+          ],
+          "name": "statistical_power.csv",
+          "rows": 1
+        }
+      ],
+      "item": "3.18",
+      "status": "PASS"
+    }
+  ],
+  "passed_items": 18,
+  "required_items": 18,
+  "schema_version": 1,
+  "status": "PASS"
+}

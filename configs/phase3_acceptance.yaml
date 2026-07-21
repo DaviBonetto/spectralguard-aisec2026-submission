@@ -1,0 +1,21 @@
+schema_version: 1
+phase: 3
+items:
+  "3.1": {required_artifacts: [gpt2_diagnostics.csv, lexical_control.csv]}
+  "3.2": {required_artifacts: [table10_unified.csv]}
+  "3.3": {required_artifacts: [threshold_provenance.csv]}
+  "3.4": {required_artifacts: [attack_success_stratified_f1.csv]}
+  "3.5": {required_artifacts: [adaptive_v2_v3_paired.csv, mcnemar_tests.csv]}
+  "3.6": {required_artifacts: [table10_bootstrap_ci.csv]}
+  "3.7": {required_artifacts: [rho_accuracy_regression.csv]}
+  "3.8": {required_artifacts: [cross_model_transfer_wilson.csv]}
+  "3.9": {required_artifacts: [hispa_head_to_head.csv]}
+  "3.10": {required_artifacts: [four_task_controls.csv, control_matching_audit.csv]}
+  "3.11": {required_artifacts: [headline_multiseed.csv]}
+  "3.12": {required_artifacts: [pareto_frontier.csv, pareto_frontier_band.pdf]}
+  "3.13": {required_artifacts: [multiple_comparisons_bh.csv]}
+  "3.14": {required_artifacts: [nonparametric_tests.csv]}
+  "3.15": {required_artifacts: [cohen_d_bootstrap.csv]}
+  "3.16": {required_artifacts: [clasp_common_protocol.csv]}
+  "3.17": {required_artifacts: [mamba_2_8b_sign_flip.csv]}
+  "3.18": {required_artifacts: [statistical_power.csv]}

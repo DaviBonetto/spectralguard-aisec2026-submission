@@ -1,0 +1,6 @@
+seed,threshold,threshold_selected_on,n_calibration,n_validation,n_test
+42,0.458,validation,1200,800,4000
+123,0.458,validation,1200,800,4000
+456,0.458,validation,1200,800,4000
+789,0.458,validation,1200,800,4000
+2026,0.458,validation,1200,800,4000

@@ -1,0 +1,19 @@
+{
+  "checks": {
+    "complete_unique_raw_matrix": true,
+    "conditional_asr_with_coverage": true,
+    "defense_confidence_intervals": true,
+    "f1_auc_finite": true,
+    "frozen_detector_no_refit": true,
+    "h100_run_complete": true,
+    "low_coverage_disclosed": true,
+    "minimum_n_300": true,
+    "per_task_attack_table": true,
+    "portable_report_paths": true,
+    "query_budget_respected": true,
+    "same_protocol_three_attacks": true,
+    "transfer_is_zero_query": true
+  },
+  "schema_version": 1,
+  "status": "PASS"
+}

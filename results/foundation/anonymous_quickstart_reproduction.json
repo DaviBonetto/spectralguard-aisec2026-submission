@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "created_at_utc": "2026-07-16T03:38:00Z",
+  "repository_url": "https://anonymous.4open.science/r/spectralguardaisec26/",
+  "download_method": "public anonymous.4open.science API",
+  "downloaded_file_count": 37,
+  "planning_directory_exposed": false,
+  "environment_command": "uv sync --locked",
+  "model_id": "state-spaces/mamba-130m-hf",
+  "model_revision": "1e76775f628fbf1350fbe4dbb3d971ba64af25a1",
+  "verification_output": "PASS: kappa_2(V)=1.0 for all 24 layers at the pinned revision.",
+  "passed": true,
+  "note": "This is the deterministic Phase 1 foundation result, not an experimental defense F1 claim. The F1 plus confidence-interval reproduction gate is attached to Phase 3 once the baseline exists."
+}

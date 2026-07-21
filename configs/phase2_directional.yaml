@@ -1,0 +1,15 @@
+seed: 42
+n_systems: 1000
+dimension: 64
+horizon: 64
+rho_benign_min: 0.97
+rho_benign_max: 0.995
+rho_monitor_threshold: 0.90
+rho_collapse_min: 0.20
+rho_collapse_max: 0.60
+task_output_drop_threshold: 0.90
+model_id: state-spaces/mamba-130m-hf
+model_revision: 1e76775f628fbf1350fbe4dbb3d971ba64af25a1
+architecture_evidence: results/foundation/mamba_130m_kappa.json
+output_json: results/theory/directional_counterexample.json
+output_csv: results/theory/directional_counterexample_table.csv

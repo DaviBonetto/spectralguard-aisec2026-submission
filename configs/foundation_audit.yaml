@@ -1,0 +1,27 @@
+schema_version: 1
+phase: 1
+
+anonymous_repository:
+  id: spectralguardaisec26
+  url: https://anonymous.4open.science/r/spectralguardaisec26/
+  status_url: https://anonymous.4open.science/status/spectralguardaisec26
+
+sources:
+  spectralguard_legacy:
+    arxiv_id: "2603.12414"
+    version: v1
+  hispa:
+    arxiv_id: "2601.01972"
+    audited_version: v4
+  clasp:
+    arxiv_id: "2603.12206"
+    audited_version: v2
+
+model_measurement:
+  model_key: mamba_130m_hf
+  output: results/foundation/mamba_130m_kappa.json
+
+reference_audit:
+  tex: paper/main.tex
+  bib: paper/references.bib
+  output: results/foundation/reference_audit.json

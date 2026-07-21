@@ -1,0 +1,73 @@
+schema_version: 1
+phase: 5
+protocol_name: spectralguard_phase5_availability_v1
+seeds: [42, 123, 456, 789, 2026]
+
+execution:
+  session_wall_clock_hours: 2.7
+  export_reserve_minutes: 8
+  require_h100: true
+  minimum_gpu_memory_gib: 75
+  minimum_free_disk_gib: 35
+  required_python: "3.12"
+  required_torch_prefix: "2.8."
+  required_cuda_major: "12"
+  checkpoint_every_sessions: 16
+  initial_batch_size: 8
+  oom_backoff: true
+
+model:
+  key: mamba_2_8b
+  id: state-spaces/mamba-2.8b-hf
+  revision: 96c48e0292b63f5346b6d30061af2551f7101e26
+  architecture: mamba
+
+dataset:
+  source_config: configs/phase3.yaml
+  validation_sessions: 60
+  test_sessions: 320
+  turns_per_session: 3
+  max_session_tokens: 512
+  tasks: [associative_recall, gsm8k, humaneval, longbench_qasper]
+
+monitor:
+  detector_source: results/phase4/manifests/frozen_detector.json
+  malicious_attack_source: results/phase4/attacks/whitebox_joint.json
+  detector_seed: 42
+  detector_frozen_on: phase3_validation
+  window_tokens: 32
+  stride_tokens: 8
+
+graduated_policy:
+  k_grid: [2, 3, 4]
+  w_grid: [4, 8, 16]
+  maximum_attack_capture_drop: 0.05
+
+adversarial_benign:
+  crafting_prompts: 4
+  validation_prompts: 16
+  test_prompts: 300
+  trigger_tokens: 8
+  steps: 8
+  restarts: 5
+  candidates_per_step: 16
+  rho_weight: 0.5
+  task_preservation_weight: 1.0
+  hazard_weight: 1.0
+  maximum_validation_task_score_drop: 0.05
+
+overhead:
+  sessions: 64
+  repeats: 3
+
+analysis:
+  bootstrap_resamples: 2000
+  confidence_level: 0.95
+  primary_unit: session_id
+  multiple_comparisons: benjamini-hochberg
+
+exports:
+  runtime_root: Experiments/phase5
+  experiments_zip: Experiments/exports/phase5_experiments.zip
+  handoff_tar: Experiments/exports/phase5_handoff.tar.gz
+  final_zip: Experiments/exports/phase5_final.zip

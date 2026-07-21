@@ -1,0 +1,9 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite the associated SpectralGuard paper."
+title: "SpectralGuard"
+type: software
+authors:
+  - family-names: "Authors"
+    given-names: "Anonymous"
+license: MIT
+url: "https://anonymous.4open.science/r/spectralguardaisec26/"

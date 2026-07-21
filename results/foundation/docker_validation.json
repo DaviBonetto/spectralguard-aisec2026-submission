@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "status": "passed",
+  "image": "spectralguard:phase1",
+  "observed_image_id": "sha256:5533411fac7759028309ec3e9925c078de8bcc638836452f4578c841e7918d4c",
+  "image_id_is_acceptance_criterion": false,
+  "image_id_note": "BuildKit manifest metadata may change across rebuilds; acceptance requires the pinned base digest and passing container tests.",
+  "image_size_bytes": 430851529,
+  "base_image": "python:3.11.13-slim-bookworm@sha256:86adf8dbadc3d6e82ee5dd2c74bec2e1c2467cdad47886280501df722372d2e1",
+  "container_test_command": "python -m pytest -q",
+  "tests_passed": 3
+}

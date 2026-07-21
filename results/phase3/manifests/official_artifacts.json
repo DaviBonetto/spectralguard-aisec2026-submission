@@ -1,0 +1,65 @@
+{
+  "official_clasp": {
+    "api_base": "https://anonymous.4open.science/api/repo/hispikes-91C0",
+    "files": [
+      {
+        "path": "README.md",
+        "sha256": "737291bab0fd464afc26365dda473c2f778e68fc0e3a199f9daf384a9f0828c7",
+        "size": 19419
+      },
+      {
+        "path": "archive/xgboost_hyperparam.json",
+        "sha256": "6d559fa268911556926cee2a0a244ee72818b585dac192d3d044cfda32da6889",
+        "size": 1144
+      },
+      {
+        "path": "hispikes/feature_extraction.py",
+        "sha256": "31ce8efe416fa9561a62bba96b38012f5a009894e060a490f13b118d6fa46034",
+        "size": 10601
+      },
+      {
+        "path": "hispikes/spikes_extraction/flexible_boe_extractor.py",
+        "sha256": "ef2d8c4a0d154ac5afaa9a7edd8af624d0c022a4477447261a44a24bfb5ce2a6",
+        "size": 20165
+      }
+    ],
+    "repository_id": "hispikes-91C0"
+  },
+  "official_hispa": {
+    "api_base": "https://anonymous.4open.science/api/repo/hispa_anonymous-5DB0",
+    "files": [
+      {
+        "path": "Mamba2_triggers_scores.json",
+        "sha256": "bd3d161f5690ac214e1072be6323ba5d279e5f28da7ce475f02e011f687470d0",
+        "size": 9015
+      },
+      {
+        "path": "Mamba_triggers_scores.json",
+        "sha256": "19b89dbcc760645306a9a6a867c12d7c71b1438467ec8027b1a6320712211d20",
+        "size": 12236
+      },
+      {
+        "path": "README.md",
+        "sha256": "b641505a468dd00b51f884ed2e4eba7e213d1005b1856cd28b30e8c62a09c2c4",
+        "size": 9788
+      },
+      {
+        "path": "data/__labels.json",
+        "sha256": "529a27105bd57da70949dfa4e6a65b29013ded88043c6ca594f36fbdfd8bd094",
+        "size": 76424
+      },
+      {
+        "path": "roboa/genetic_algorithm.py",
+        "sha256": "39703dc5de0b17265413d0d46b38b114249c4467a3940b0042c85cdb3323a443",
+        "size": 55526
+      },
+      {
+        "path": "roboa/hill_climbing.py",
+        "sha256": "09ad3e0b7dc45f7a690a784cb558a09cd9526f20ddb3837a94436b08ef2be548",
+        "size": 17258
+      }
+    ],
+    "repository_id": "hispa_anonymous-5DB0"
+  },
+  "schema_version": 2
+}

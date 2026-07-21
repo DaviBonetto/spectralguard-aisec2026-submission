@@ -1,0 +1,14 @@
+{
+  "elapsed_seconds": 979.631570729,
+  "experiments_zip": "Experiments/exports/phase4_experiments.zip",
+  "schema_version": 1,
+  "stages": [
+    "cpu_audit",
+    "h100_preflight",
+    "surrogate_crafting",
+    "blackbox_query_only",
+    "whitebox_joint",
+    "confirmatory_evaluation"
+  ],
+  "status": "COMPLETE"
+}

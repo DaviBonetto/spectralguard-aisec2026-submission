@@ -1,0 +1,40 @@
+{
+  "schema_version": 1,
+  "execution_commit": "774d7997c52fd2f827a9a23bbbefcb02e433a87d",
+  "input_archives": {
+    "phase4_experiments.zip": {
+      "bytes": 17814954,
+      "sha256": "998197662290ec5863955cd569d02bb6e9b8163928b26c8e0ba935c6cc95ca48",
+      "internal_sha256_entries_verified": 14,
+      "jsonl_rows_verified": 1200
+    },
+    "phase4_final.zip": {
+      "bytes": 16139,
+      "sha256": "4c82bcf548b71a588ee63b60c0c523bd87f5545c95ed6e81c44477d6a3a13fe2",
+      "internal_sha256_entries_verified": 16
+    }
+  },
+  "confirmatory_matrix": {
+    "conditions": 4,
+    "prompts_per_condition": 300,
+    "rows": 1200,
+    "unique_prompt_condition_pairs": 1200,
+    "duplicate_pairs": 0
+  },
+  "whitebox_grid": {
+    "lambdas": [0.25, 1.0, 2.0],
+    "seeds": [42, 123, 456],
+    "completed": 9,
+    "expected": 9
+  },
+  "recorded_final_resume_seconds": 979.631570729,
+  "total_multisession_gpu_seconds": null,
+  "post_run_analysis": {
+    "uses_gpu": false,
+    "raw_rows_changed": false,
+    "purpose": "add task-stratified results, F1/AUC bootstrap intervals, portable paths, and explicit low-coverage disclosure",
+    "corrected_final_zip_sha256": "8283209becd76ffe63ec549232a5a1992bae615e55abea6a151c6b9b5315479d",
+    "corrected_final_zip_bytes": 17045,
+    "corrected_internal_sha256_entries_verified": 17
+  }
+}

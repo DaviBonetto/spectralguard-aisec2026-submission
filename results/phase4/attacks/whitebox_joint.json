@@ -1,0 +1,731 @@
+[
+  {
+    "algorithm": "discrete_hotflip_universal",
+    "candidates_per_step": 16,
+    "detector_aware": true,
+    "final_diagnostics": {
+      "hazard": 0.8299018889665604,
+      "rho_mean": 0.9999944418668747,
+      "task_loss": 1.922568678855896
+    },
+    "final_objective": -1.2150960266590118,
+    "hazard_weight": 0.25,
+    "history": [
+      {
+        "hazard": 0.44775803107768297,
+        "objective": -1.2498882412910461,
+        "position": 0,
+        "rho_mean": 0.9999947100877762,
+        "step": 0,
+        "task_loss": 1.8618250787258148
+      },
+      {
+        "hazard": 0.7736842036247253,
+        "objective": -1.067606195807457,
+        "position": 1,
+        "rho_mean": 0.9999946653842926,
+        "step": 1,
+        "task_loss": 1.761024534702301
+      },
+      {
+        "hazard": 0.7427552938461304,
+        "objective": -1.1229270100593567,
+        "position": 2,
+        "rho_mean": 0.999994620680809,
+        "step": 2,
+        "task_loss": 1.808613121509552
+      },
+      {
+        "hazard": 0.6326664760708809,
+        "objective": -1.1323429942131042,
+        "position": 3,
+        "rho_mean": 0.9999945610761642,
+        "step": 3,
+        "task_loss": 1.790506899356842
+      },
+      {
+        "hazard": 0.820693626999855,
+        "objective": -1.138321042060852,
+        "position": 4,
+        "rho_mean": 0.9999945908784866,
+        "step": 4,
+        "task_loss": 1.8434917330741882
+      },
+      {
+        "hazard": 0.8424312472343445,
+        "objective": -1.0859136879444122,
+        "position": 5,
+        "rho_mean": 0.9999944269657135,
+        "step": 5,
+        "task_loss": 1.796518713235855
+      }
+    ],
+    "lambda": 0.25,
+    "rho_weight": 0.5,
+    "schema_version": 1,
+    "seed": 42,
+    "steps": 6,
+    "task_weight": 1.0,
+    "trigger_text": "ViewById gCCCC destro enerpless inputsidents",
+    "trigger_token_ids": [
+      30031,
+      305,
+      41110,
+      20430,
+      21606,
+      18628,
+      14800,
+      9274
+    ],
+    "trigger_tokens": 8,
+    "validation_objective": 0.8282304903221022
+  },
+  {
+    "algorithm": "discrete_hotflip_universal",
+    "candidates_per_step": 16,
+    "detector_aware": true,
+    "final_diagnostics": {
+      "hazard": 0.9589206129312515,
+      "rho_mean": 0.999994158744812,
+      "task_loss": 2.7537078261375427
+    },
+    "final_objective": -2.0139805376529694,
+    "hazard_weight": 0.25,
+    "history": [
+      {
+        "hazard": 0.9343866407871246,
+        "objective": -1.6616995334625244,
+        "position": 0,
+        "rho_mean": 0.9999943375587463,
+        "step": 0,
+        "task_loss": 2.3952933847904205
+      },
+      {
+        "hazard": 0.7549427002668381,
+        "objective": -1.74099799990654,
+        "position": 1,
+        "rho_mean": 0.9999944269657135,
+        "step": 1,
+        "task_loss": 2.4297309517860413
+      },
+      {
+        "hazard": 0.9750527888536453,
+        "objective": -2.266026258468628,
+        "position": 2,
+        "rho_mean": 0.9999939650297165,
+        "step": 2,
+        "task_loss": 3.0097864866256714
+      },
+      {
+        "hazard": 0.9651809334754944,
+        "objective": -1.798716962337494,
+        "position": 3,
+        "rho_mean": 0.9999940544366837,
+        "step": 3,
+        "task_loss": 2.5400092899799347
+      },
+      {
+        "hazard": 0.9691441506147385,
+        "objective": -2.148023635149002,
+        "position": 4,
+        "rho_mean": 0.9999939501285553,
+        "step": 4,
+        "task_loss": 2.8903066515922546
+      },
+      {
+        "hazard": 0.9789110720157623,
+        "objective": -2.1884557008743286,
+        "position": 5,
+        "rho_mean": 0.9999941438436508,
+        "step": 5,
+        "task_loss": 2.933180570602417
+      }
+    ],
+    "lambda": 0.25,
+    "rho_weight": 0.5,
+    "schema_version": 1,
+    "seed": 123,
+    "steps": 6,
+    "task_weight": 1.0,
+    "trigger_text": "thereum download}{~ Social pages recip complex establishes",
+    "trigger_token_ids": [
+      36376,
+      6184,
+      39586,
+      8404,
+      7223,
+      7926,
+      2570,
+      25097
+    ],
+    "trigger_tokens": 8,
+    "validation_objective": 0.905068127445385
+  },
+  {
+    "algorithm": "discrete_hotflip_universal",
+    "candidates_per_step": 16,
+    "detector_aware": true,
+    "final_diagnostics": {
+      "hazard": 0.6744652390480042,
+      "rho_mean": 0.9999944716691971,
+      "task_loss": 2.488279014825821
+    },
+    "final_objective": -1.8196655213832855,
+    "hazard_weight": 0.25,
+    "history": [
+      {
+        "hazard": 0.6357436217367649,
+        "objective": -1.4822421371936798,
+        "position": 0,
+        "rho_mean": 0.9999945014715195,
+        "step": 0,
+        "task_loss": 2.141175329685211
+      },
+      {
+        "hazard": 0.6066873371601105,
+        "objective": -1.4764388352632523,
+        "position": 1,
+        "rho_mean": 0.9999946504831314,
+        "step": 1,
+        "task_loss": 2.1281079947948456
+      },
+      {
+        "hazard": 0.4651372879743576,
+        "objective": -1.6263263523578644,
+        "position": 2,
+        "rho_mean": 0.9999946057796478,
+        "step": 2,
+        "task_loss": 2.2426080107688904
+      },
+      {
+        "hazard": 0.5346228703856468,
+        "objective": -1.6555013954639435,
+        "position": 3,
+        "rho_mean": 0.9999945908784866,
+        "step": 3,
+        "task_loss": 2.2891544103622437
+      },
+      {
+        "hazard": 0.6094337701797485,
+        "objective": -1.7859029173851013,
+        "position": 4,
+        "rho_mean": 0.9999944865703583,
+        "step": 4,
+        "task_loss": 2.438258618116379
+      },
+      {
+        "hazard": 0.6567541658878326,
+        "objective": -1.7967573702335358,
+        "position": 5,
+        "rho_mean": 0.9999944865703583,
+        "step": 5,
+        "task_loss": 2.4609432220458984
+      }
+    ],
+    "lambda": 0.25,
+    "rho_weight": 0.5,
+    "schema_version": 1,
+    "seed": 456,
+    "steps": 6,
+    "task_weight": 1.0,
+    "trigger_text": "Ignore intelligenceAndroidRuntimeboost Leban automation systems wurde",
+    "trigger_token_ids": [
+      36142,
+      9260,
+      35916,
+      15467,
+      22514,
+      29885,
+      2718,
+      40803
+    ],
+    "trigger_tokens": 8,
+    "validation_objective": 0.8442440764502783
+  },
+  {
+    "algorithm": "discrete_hotflip_universal",
+    "candidates_per_step": 16,
+    "detector_aware": true,
+    "final_diagnostics": {
+      "hazard": 0.3836929574608803,
+      "rho_mean": 0.9999947398900986,
+      "task_loss": 1.8480962216854095
+    },
+    "final_objective": -0.9644058868288994,
+    "hazard_weight": 1.0,
+    "history": [
+      {
+        "hazard": 0.44775803107768297,
+        "objective": -0.914069727063179,
+        "position": 0,
+        "rho_mean": 0.9999947100877762,
+        "step": 0,
+        "task_loss": 1.8618250787258148
+      },
+      {
+        "hazard": 0.5111535266041756,
+        "objective": -0.777385413646698,
+        "position": 1,
+        "rho_mean": 0.9999947398900986,
+        "step": 1,
+        "task_loss": 1.7885362803936005
+      },
+      {
+        "hazard": 0.6364515870809555,
+        "objective": -0.5757671147584915,
+        "position": 2,
+        "rho_mean": 0.9999946653842926,
+        "step": 2,
+        "task_loss": 1.7122160196304321
+      },
+      {
+        "hazard": 0.5348332449793816,
+        "objective": -0.7435233294963837,
+        "position": 3,
+        "rho_mean": 0.9999947100877762,
+        "step": 3,
+        "task_loss": 1.778353899717331
+      },
+      {
+        "hazard": 0.40241994708776474,
+        "objective": -0.923699252307415,
+        "position": 4,
+        "rho_mean": 0.9999948292970657,
+        "step": 4,
+        "task_loss": 1.8261166512966156
+      },
+      {
+        "hazard": 0.3183822613209486,
+        "objective": -1.022698663175106,
+        "position": 5,
+        "rho_mean": 0.9999948143959045,
+        "step": 5,
+        "task_loss": 1.8410783112049103
+      }
+    ],
+    "lambda": 1.0,
+    "rho_weight": 0.5,
+    "schema_version": 1,
+    "seed": 42,
+    "steps": 6,
+    "task_weight": 1.0,
+    "trigger_text": " questionna Guswwsogamic inputsidents",
+    "trigger_token_ids": [
+      12253,
+      46194,
+      88,
+      8819,
+      462,
+      12614,
+      14800,
+      9274
+    ],
+    "trigger_tokens": 8,
+    "validation_objective": 0.7019588775961273
+  },
+  {
+    "algorithm": "discrete_hotflip_universal",
+    "candidates_per_step": 16,
+    "detector_aware": true,
+    "final_diagnostics": {
+      "hazard": 0.9433256238698959,
+      "rho_mean": 0.9999944269657135,
+      "task_loss": 2.603377342224121
+    },
+    "final_objective": -1.1600544601678848,
+    "hazard_weight": 1.0,
+    "history": [
+      {
+        "hazard": 0.9343866407871246,
+        "objective": -0.9609095007181168,
+        "position": 0,
+        "rho_mean": 0.9999943375587463,
+        "step": 0,
+        "task_loss": 2.3952933847904205
+      },
+      {
+        "hazard": 0.8837668150663376,
+        "objective": -1.0376263856887817,
+        "position": 1,
+        "rho_mean": 0.9999944716691971,
+        "step": 1,
+        "task_loss": 2.4213905036449432
+      },
+      {
+        "hazard": 0.9479193538427353,
+        "objective": -1.1033403724431992,
+        "position": 2,
+        "rho_mean": 0.9999942779541016,
+        "step": 2,
+        "task_loss": 2.5512568950653076
+      },
+      {
+        "hazard": 0.946877121925354,
+        "objective": -1.0542073398828506,
+        "position": 3,
+        "rho_mean": 0.9999941736459732,
+        "step": 3,
+        "task_loss": 2.501081496477127
+      },
+      {
+        "hazard": 0.9796425104141235,
+        "objective": -1.2834376692771912,
+        "position": 4,
+        "rho_mean": 0.999994084239006,
+        "step": 4,
+        "task_loss": 2.763077199459076
+      },
+      {
+        "hazard": 0.9361173659563065,
+        "objective": -1.1766523271799088,
+        "position": 5,
+        "rho_mean": 0.9999942630529404,
+        "step": 5,
+        "task_loss": 2.6127668917179108
+      }
+    ],
+    "lambda": 1.0,
+    "rho_weight": 0.5,
+    "schema_version": 1,
+    "seed": 123,
+    "steps": 6,
+    "task_weight": 1.0,
+    "trigger_text": " concess regim Reply reciproc lovedristol complex establishes",
+    "trigger_token_ids": [
+      40899,
+      17350,
+      38984,
+      33704,
+      7636,
+      27512,
+      2570,
+      25097
+    ],
+    "trigger_tokens": 8,
+    "validation_objective": 0.8887073654358487
+  },
+  {
+    "algorithm": "discrete_hotflip_universal",
+    "candidates_per_step": 16,
+    "detector_aware": true,
+    "final_diagnostics": {
+      "hazard": 0.7468406111001968,
+      "rho_mean": 0.9999944716691971,
+      "task_loss": 2.2639357149600983
+    },
+    "final_objective": -1.0170978605747223,
+    "hazard_weight": 1.0,
+    "history": [
+      {
+        "hazard": 0.6357436217367649,
+        "objective": -1.0054344236850739,
+        "position": 0,
+        "rho_mean": 0.9999945014715195,
+        "step": 0,
+        "task_loss": 2.141175329685211
+      },
+      {
+        "hazard": 0.6723025441169739,
+        "objective": -0.967477098107338,
+        "position": 1,
+        "rho_mean": 0.9999944716691971,
+        "step": 1,
+        "task_loss": 2.1397769153118134
+      },
+      {
+        "hazard": 0.5990481413900852,
+        "objective": -1.1217099130153656,
+        "position": 2,
+        "rho_mean": 0.9999944716691971,
+        "step": 2,
+        "task_loss": 2.2207552790641785
+      },
+      {
+        "hazard": 0.6613687425851822,
+        "objective": -1.2237394750118256,
+        "position": 3,
+        "rho_mean": 0.9999944269657135,
+        "step": 3,
+        "task_loss": 2.385105460882187
+      },
+      {
+        "hazard": 0.5869780592620373,
+        "objective": -1.2286699563264847,
+        "position": 4,
+        "rho_mean": 0.9999945312738419,
+        "step": 4,
+        "task_loss": 2.3156452775001526
+      },
+      {
+        "hazard": 0.7411012426018715,
+        "objective": -1.0385398864746094,
+        "position": 5,
+        "rho_mean": 0.9999944120645523,
+        "step": 5,
+        "task_loss": 2.279638350009918
+      }
+    ],
+    "lambda": 1.0,
+    "rho_weight": 0.5,
+    "schema_version": 1,
+    "seed": 456,
+    "steps": 6,
+    "task_weight": 1.0,
+    "trigger_text": "CHANTABILITY Intelligence tel Tag cryptocurlasses systems wurde",
+    "trigger_token_ids": [
+      20386,
+      19256,
+      14591,
+      17750,
+      22394,
+      38330,
+      2718,
+      40803
+    ],
+    "trigger_tokens": 8,
+    "validation_objective": 0.917018999255537
+  },
+  {
+    "algorithm": "discrete_hotflip_universal",
+    "candidates_per_step": 16,
+    "detector_aware": true,
+    "final_diagnostics": {
+      "hazard": 0.43472766131162643,
+      "rho_mean": 0.9999947845935822,
+      "task_loss": 1.8476479053497314
+    },
+    "final_objective": -0.4781952053308487,
+    "hazard_weight": 2.0,
+    "history": [
+      {
+        "hazard": 0.44775803107768297,
+        "objective": -0.4663116931915283,
+        "position": 0,
+        "rho_mean": 0.9999947100877762,
+        "step": 0,
+        "task_loss": 1.8618250787258148
+      },
+      {
+        "hazard": 0.5111535266041756,
+        "objective": -0.26623186469078064,
+        "position": 1,
+        "rho_mean": 0.9999947398900986,
+        "step": 1,
+        "task_loss": 1.7885362803936005
+      },
+      {
+        "hazard": 0.4824788123369217,
+        "objective": -0.3186596781015396,
+        "position": 2,
+        "rho_mean": 0.9999947398900986,
+        "step": 2,
+        "task_loss": 1.7836146652698517
+      },
+      {
+        "hazard": 0.4603675566613674,
+        "objective": -0.4964637756347656,
+        "position": 3,
+        "rho_mean": 0.9999947249889374,
+        "step": 3,
+        "task_loss": 1.9171962440013885
+      },
+      {
+        "hazard": 0.4769706577062607,
+        "objective": -0.4473133385181427,
+        "position": 4,
+        "rho_mean": 0.9999947994947433,
+        "step": 4,
+        "task_loss": 1.9012520611286163
+      },
+      {
+        "hazard": 0.48013391625136137,
+        "objective": -0.3103276789188385,
+        "position": 5,
+        "rho_mean": 0.9999947994947433,
+        "step": 5,
+        "task_loss": 1.7705929279327393
+      }
+    ],
+    "lambda": 2.0,
+    "rho_weight": 0.5,
+    "schema_version": 1,
+    "seed": 42,
+    "steps": 6,
+    "task_weight": 1.0,
+    "trigger_text": " questionna supernatmontoplastic paranorin inputsidents",
+    "trigger_token_ids": [
+      12253,
+      20637,
+      19065,
+      21945,
+      34823,
+      48333,
+      14800,
+      9274
+    ],
+    "trigger_tokens": 8,
+    "validation_objective": 0.7901621223056233
+  },
+  {
+    "algorithm": "discrete_hotflip_universal",
+    "candidates_per_step": 16,
+    "detector_aware": true,
+    "final_diagnostics": {
+      "hazard": 0.6467709466814995,
+      "rho_mean": 0.9999946653842926,
+      "task_loss": 2.111310750246048
+    },
+    "final_objective": -0.3177715390920639,
+    "hazard_weight": 2.0,
+    "history": [
+      {
+        "hazard": 0.9343866407871246,
+        "objective": -0.02652287483215332,
+        "position": 0,
+        "rho_mean": 0.9999943375587463,
+        "step": 0,
+        "task_loss": 2.3952933847904205
+      },
+      {
+        "hazard": 0.8293434083461761,
+        "objective": -0.2558685839176178,
+        "position": 1,
+        "rho_mean": 0.9999944269657135,
+        "step": 1,
+        "task_loss": 2.414552688598633
+      },
+      {
+        "hazard": 0.9171798527240753,
+        "objective": -0.15525123476982117,
+        "position": 2,
+        "rho_mean": 0.9999943673610687,
+        "step": 2,
+        "task_loss": 2.4896081387996674
+      },
+      {
+        "hazard": 0.8152734786272049,
+        "objective": -0.0925171822309494,
+        "position": 3,
+        "rho_mean": 0.9999944120645523,
+        "step": 3,
+        "task_loss": 2.223061352968216
+      },
+      {
+        "hazard": 0.7719895094633102,
+        "objective": -0.16492518782615662,
+        "position": 4,
+        "rho_mean": 0.9999945163726807,
+        "step": 4,
+        "task_loss": 2.208901435136795
+      },
+      {
+        "hazard": 0.590968057513237,
+        "objective": -0.4293665885925293,
+        "position": 5,
+        "rho_mean": 0.9999946653842926,
+        "step": 5,
+        "task_loss": 2.111300051212311
+      }
+    ],
+    "lambda": 2.0,
+    "rho_weight": 0.5,
+    "schema_version": 1,
+    "seed": 123,
+    "steps": 6,
+    "task_weight": 1.0,
+    "trigger_text": "EGFR destro Revetypen foreververages complex establishes",
+    "trigger_token_ids": [
+      47447,
+      20430,
+      33084,
+      15224,
+      11654,
+      33645,
+      2570,
+      25097
+    ],
+    "trigger_tokens": 8,
+    "validation_objective": 1.0006502273509355
+  },
+  {
+    "algorithm": "discrete_hotflip_universal",
+    "candidates_per_step": 16,
+    "detector_aware": true,
+    "final_diagnostics": {
+      "hazard": 0.319936977699399,
+      "rho_mean": 0.9999947398900986,
+      "task_loss": 2.1786538660526276
+    },
+    "final_objective": -1.0387825667858124,
+    "hazard_weight": 2.0,
+    "history": [
+      {
+        "hazard": 0.6357436217367649,
+        "objective": -0.36969080567359924,
+        "position": 0,
+        "rho_mean": 0.9999945014715195,
+        "step": 0,
+        "task_loss": 2.141175329685211
+      },
+      {
+        "hazard": 0.4486767593771219,
+        "objective": -0.7062676846981049,
+        "position": 1,
+        "rho_mean": 0.9999946057796478,
+        "step": 1,
+        "task_loss": 2.1036185026168823
+      },
+      {
+        "hazard": 0.3849697317928076,
+        "objective": -0.8411946147680283,
+        "position": 2,
+        "rho_mean": 0.9999946057796478,
+        "step": 2,
+        "task_loss": 2.1111313700675964
+      },
+      {
+        "hazard": 0.3770965710282326,
+        "objective": -0.8520442247390747,
+        "position": 3,
+        "rho_mean": 0.9999947100877762,
+        "step": 3,
+        "task_loss": 2.106234699487686
+      },
+      {
+        "hazard": 0.3428737632930279,
+        "objective": -0.9131603837013245,
+        "position": 4,
+        "rho_mean": 0.9999947100877762,
+        "step": 4,
+        "task_loss": 2.0989052653312683
+      },
+      {
+        "hazard": 0.37200311571359634,
+        "objective": -0.845906525850296,
+        "position": 5,
+        "rho_mean": 0.9999947249889374,
+        "step": 5,
+        "task_loss": 2.08991014957428
+      }
+    ],
+    "lambda": 2.0,
+    "rho_weight": 0.5,
+    "schema_version": 1,
+    "seed": 456,
+    "steps": 6,
+    "task_weight": 1.0,
+    "trigger_text": "OMNI weapplbotaleigh moisture systems wurde",
+    "trigger_token_ids": [
+      30491,
+      5855,
+      446,
+      12042,
+      44005,
+      19755,
+      2718,
+      40803
+    ],
+    "trigger_tokens": 8,
+    "validation_objective": 0.9010010380233967
+  }
+]

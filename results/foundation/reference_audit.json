@@ -1,0 +1,30 @@
+{
+  "bib_entry_count": 2,
+  "cited_key_count": 2,
+  "created_at_utc": "2026-07-16T02:28:38.816776+00:00",
+  "metadata_divergences": [],
+  "missing_bib_entries": [],
+  "official_metadata_checks": [
+    {
+      "arxiv_id": "2603.12206",
+      "authors_match": true,
+      "key": "lemercier2026clasp",
+      "official_doi": "10.48550/arxiv.2603.12206",
+      "official_url": "https://arxiv.org/abs/2603.12206",
+      "title_match": true,
+      "year_match": true
+    },
+    {
+      "arxiv_id": "2601.01972",
+      "authors_match": true,
+      "key": "lemercier2026hispa",
+      "official_doi": "10.48550/arxiv.2601.01972",
+      "official_url": "https://arxiv.org/abs/2601.01972",
+      "title_match": true,
+      "year_match": true
+    }
+  ],
+  "orphaned_bib_entries": [],
+  "passed": true,
+  "schema_version": 1
+}

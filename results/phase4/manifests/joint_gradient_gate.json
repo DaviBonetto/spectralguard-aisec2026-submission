@@ -1,0 +1,7 @@
+{
+  "detector_gradient_contribution_norm": 0.53515625,
+  "joint_gradient_norm": 2.140625,
+  "schema_version": 1,
+  "status": "PASS",
+  "task_gradient_norm": 2.046875
+}

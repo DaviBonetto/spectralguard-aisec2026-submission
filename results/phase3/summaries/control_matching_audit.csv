@@ -1,0 +1,15 @@
+experiment,absolute_nll_difference,attack_nll,attack_text,control_nll,control_official_index,control_source,control_text,token_length
+E01_main_mamba,0.7911567687988281,4.95955753326416,<endoftext>,5.750714302062988,54,official_hispa_snapshot_benign,"
+### NOTE ###",5
+E02_gpt2_control,0.48244810104370117,5.599609375,<endoftext>,6.082057476043701,52,official_hispa_snapshot_benign,"
+!!! note !!!",5
+E03_pythia_control,0.32929134368896484,6.1407318115234375,<endoftext>,6.470023155212402,52,official_hispa_snapshot_benign,"
+!!! note !!!",5
+E04_adaptive,0.05771064758300781,5.218245029449463,<endoftext>,5.160534381866455,54,official_hispa_snapshot_benign,"
+### NOTE ###",5
+E05_transfer_mamba_1_4b,0.003474712371826172,5.454347133636475,<endoftext>,5.457821846008301,48,official_hispa_snapshot_benign,"
+!!! NOTE !!!",5
+E07_transfer_pythia_1_4b,1.09358549118042,5.026449203491211,<endoftext>,6.120034694671631,54,official_hispa_snapshot_benign,"
+### NOTE ###",5
+E08_zamba,2.245119571685791,3.7532052993774414,<endoftext>,5.998324871063232,49,official_hispa_snapshot_benign,"
+*** NOTE ***",5

@@ -1,0 +1,13 @@
+condition,task,n,clean_correct_n,coverage,conditional_asr,conditional_asr_ci_low,conditional_asr_ci_high,absolute_asr
+blackbox_transfer,associative_recall,75,13,0.17333333333333334,1.0,1.0,1.0,0.17333333333333334
+blackbox_transfer,gsm8k,75,0,0.0,,,,0.0
+blackbox_transfer,humaneval,75,0,0.0,,,,0.0
+blackbox_transfer,longbench_qasper,75,0,0.0,,,,0.0
+blackbox_query,associative_recall,75,13,0.17333333333333334,1.0,1.0,1.0,0.17333333333333334
+blackbox_query,gsm8k,75,0,0.0,,,,0.0
+blackbox_query,humaneval,75,0,0.0,,,,0.0
+blackbox_query,longbench_qasper,75,0,0.0,,,,0.0
+whitebox_joint,associative_recall,75,13,0.17333333333333334,0.8461538461538461,0.6153846153846154,1.0,0.14666666666666667
+whitebox_joint,gsm8k,75,0,0.0,,,,0.0
+whitebox_joint,humaneval,75,0,0.0,,,,0.0
+whitebox_joint,longbench_qasper,75,0,0.0,,,,0.0

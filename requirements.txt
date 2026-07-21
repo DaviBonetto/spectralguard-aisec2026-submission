@@ -1,0 +1,12 @@
+# Exact, intentionally conservative pins for Phase 0. CUDA-specific PyTorch
+# installation is selected in the experiment environment, not at import time.
+numpy==2.3.0
+pandas==2.3.0
+PyYAML==6.0.2
+scikit-learn==1.7.0
+torch==2.7.1
+transformers==4.52.4
+accelerate==1.7.0
+safetensors==0.5.3
+pytest==8.4.0
+ruff==0.11.13

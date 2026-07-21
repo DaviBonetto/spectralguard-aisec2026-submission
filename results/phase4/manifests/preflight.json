@@ -1,0 +1,13 @@
+{
+  "bf16": true,
+  "commit": "774d7997c52fd2f827a9a23bbbefcb02e433a87d",
+  "config_sha256": "77dc7eb2f90fcf10a1a5c4cc8185cfc1bf834bcbfd99698cf15eabdf8a09947e",
+  "cuda": "12.8",
+  "free_disk_gib": 1916.7675018310547,
+  "gpu": "NVIDIA H100 80GB HBM3",
+  "gpu_memory_gib": 79.1787109375,
+  "python": "3.12.11 | packaged by Anaconda, Inc. | (main, Jun  5 2025, 13:09:17) [GCC 11.2.0]",
+  "schema_version": 1,
+  "status": "PASS",
+  "torch": "2.8.0+cu128"
+}

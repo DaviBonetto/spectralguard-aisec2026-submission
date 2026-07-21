@@ -1,0 +1,42 @@
+{
+  "blackbox_target_information": [
+    "task_score",
+    "correct",
+    "response_excerpt"
+  ],
+  "clasp_scope": "BOE features are exported for future common-protocol scoring; Phase 3 did not publish a serializable frozen CLASP-style tree ensemble, so no invalid refit or cross-protocol Phase 4 CLASP number is reported.",
+  "conditions": [
+    "clean",
+    "blackbox_transfer",
+    "blackbox_query",
+    "whitebox_joint"
+  ],
+  "limitations": [
+    "Only 13/300 clean prompts were answered correctly by the target; conditional ASR therefore has low coverage and must be reported with its interval and absolute ASR.",
+    "No Phase 4 CLASP number is reported because no frozen serializable comparator was available."
+  ],
+  "outputs": [
+    "Experiments/phase4/summaries/attack_comparison.csv",
+    "Experiments/phase4/summaries/attack_comparison_by_task.csv",
+    "Experiments/phase4/summaries/worst_case_defense.csv",
+    "Experiments/phase4/summaries/query_budget.csv"
+  ],
+  "primary_unit": "prompt_id",
+  "schema_version": 1,
+  "selection_policy": "craft and select on frozen validation; test evaluated once",
+  "status": "PASS",
+  "test_prompts": 300,
+  "worst_case_adaptive": {
+    "auc": 0.828711111111111,
+    "auc_ci_high": 0.8607943421135075,
+    "auc_ci_low": 0.7950863888888889,
+    "condition": "whitebox_joint",
+    "detector": "spectralguard_phase3_frozen_seed42",
+    "f1": 0.7461139896373057,
+    "f1_ci_high": 0.7846442470342403,
+    "f1_ci_low": 0.703569619836885,
+    "n": 600,
+    "threshold_refit": false,
+    "threshold_selected_on": "phase3_validation"
+  }
+}

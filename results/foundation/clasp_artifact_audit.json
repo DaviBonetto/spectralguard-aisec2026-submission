@@ -1,0 +1,20 @@
+{
+  "api_base": "https://anonymous.4open.science/api/repo/hispikes-91C0",
+  "archive_entry_count": 7,
+  "code_entry_count": 18,
+  "created_at_utc": "2026-07-16T02:28:40.534807+00:00",
+  "passed": true,
+  "phase_3_note": "The Phase 1 audit established artifact availability only. The completed common-protocol comparison is released separately under results/phase3.",
+  "repository_url": "https://anonymous.4open.science/r/hispikes-91C0/",
+  "required_artifacts": {
+    "README.md": true,
+    "SETUP.md": true,
+    "feature_extraction.py": true,
+    "inject_hispa.py": true,
+    "pyproject.toml": true,
+    "uv.lock": true,
+    "xgboost_hyperparam.json": true
+  },
+  "root_entry_count": 12,
+  "schema_version": 1
+}

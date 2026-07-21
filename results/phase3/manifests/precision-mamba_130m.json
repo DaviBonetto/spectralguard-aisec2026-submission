@@ -1,0 +1,13 @@
+{
+  "bf16_acceptable": true,
+  "max_relative_rho_error": 1.324325849540119e-05,
+  "mean_relative_rho_error": 1.017143362961492e-05,
+  "model_key": "mamba_130m",
+  "model_revision": "1e76775f628fbf1350fbe4dbb3d971ba64af25a1",
+  "n": 2,
+  "precision_policy": "mamba_spectral_stability_v2",
+  "prediction_agreement": 0.5,
+  "prediction_agreement_role": "informational_only",
+  "schema_version": 2,
+  "spectral_relative_error_threshold": 0.001
+}

@@ -1,0 +1,297 @@
+\documentclass[sigconf,anonymous,nonacm]{acmart}
+
+% AISec 2026 follows the ACM CCS 2026 formatting instructions, except for
+% its 10-page body + 2-page appendix limit.  The CCS sample requires the
+% The nonacm submission mode suppresses the post-acceptance rights block.
+\acmConference[AISec '26]{Proceedings of the 2026 ACM Workshop on Artificial
+  Intelligence and Security}{November 15--19, 2026}{The Hague, Netherlands}
+
+\title{[PENDING: title depends on Phase 7]}
+
+% CCS concepts must be generated with the ACM CCS classifier once the final
+% contribution and title are fixed in Phase 7.  Do not invent taxonomy IDs.
+% The final submission must retain the generated CCSXML block and \ccsdesc.
+\keywords{state space models, machine learning security, adversarial machine learning, model robustness}
+\begin{document}
+\begin{abstract}
+% PENDING: depends on the Phase 7 scientific-positioning decision.
+\end{abstract}
+\maketitle
+
+% Double-blind submission: deliberately no \author, \affiliation, \email,
+% acknowledgments, funding statement, or identifying repository URL appears.
+
+\section{Introduction}
+% PENDING: central SSM-versus-Transformer claim is calibrated in Phase 7.
+
+\section{Background and Related Work}
+
+Le Mercier, Develder, and Demeester introduced Hidden State Poisoning
+Attacks (HiSPAs), showing that short adversarial strings can corrupt the
+recurrent memory of Mamba-family models and evaluating the effect with the
+RoBench-25 benchmark \cite{lemercier2026hispa}.  Their latest arXiv revision
+also studies Mamba-2 and hybrid SSM--Transformer models.
+
+Concurrent work proposes CLASP, a token- and document-level detector trained
+with XGBoost over Mamba block-output embeddings (BOEs)
+\cite{lemercier2026clasp}.  CLASP is evaluated primarily on controlled
+injections into a resume corpus and explicitly leaves adaptive evasion and
+cross-domain validation open.  SpectralGuard instead investigates the
+dynamics of the discretized state-transition operator and a detector based on
+layer-wise spectral measurements.  Under the common Phase~3 protocol,
+SpectralGuard obtained F1~$0.806$ and AUC~$0.887$, while our CLASP-style
+BOE+XGBoost reimplementation obtained F1~$0.969$ and AUC~$0.997$.  The latter
+uses the published CLASP design elements rather than official pretrained
+weights; accordingly, we claim neither that the reimplementation is identical
+to the authors' release nor that SpectralGuard is empirically superior.
+
+\section{Spectral Foundations and Theory}
+
+\paragraph{Condition-number convention.}
+We use $\kappa=\operatorname{cond}_2(V)$ for an eigenvector matrix $V$ that
+diagonalizes the state-transition operator; this is distinct from
+$\operatorname{cond}_2(A)$.  In the pinned Mamba-130M checkpoint, all 24
+continuous-time $A$ operators (and consequently $\exp(\Delta_t A)$) are real
+and diagonal.  Thus $V=I$ and $\kappa=1$ exactly.  A direct audit of revision
+\texttt{1e76775f628fbf1350fbe4dbb3d971ba64af25a1} confirms this structure.
+The legacy value $\kappa\approx3$ is unsupported and is not used in the
+revised analysis.
+
+Let the frozen transition at one token be diagonal:
+\begin{equation}
+ \bar A=\operatorname{diag}(a_1,\ldots,a_d),\qquad
+ 0<\rho=\max_i|a_i|<1.
+\end{equation}
+For $h_0\neq0$ and $0<\epsilon<1$, we define an $\epsilon$-forgetting time
+using only the unforced contribution, avoiding an unobservable ``noise''
+denominator:
+\begin{equation}
+ H_\epsilon(h_0)=\min\{t\geq0:\|\bar A^t h_0\|_2
+ \leq\epsilon\|h_0\|_2\}.
+\end{equation}
+
+\begin{theorem}[Diagonal forgetting certificate]
+\label{thm:diagonal-forgetting}
+For $h_t=\bar A^t h_0$,
+\begin{equation}
+ \|h_t\|_2^2=\sum_i |a_i|^{2t}|h_{0,i}|^2
+ \leq \rho^{2t}\|h_0\|_2^2,
+\end{equation}
+and consequently
+\begin{equation}
+ H_\epsilon(h_0)\leq
+ \left\lceil\frac{\log(1/\epsilon)}{\log(1/\rho)}\right\rceil.
+\label{eq:forgetting-upper}
+\end{equation}
+If $P_\rho$ projects onto coordinates with $|a_i|=\rho$ and
+\begin{equation}
+ \alpha=\frac{\|P_\rho h_0\|_2}{\|h_0\|_2}>0,
+ \quad \|h_t\|_2\geq\alpha\rho^t\|h_0\|_2,
+\end{equation}
+then persistence is certified along that slow-mode component.  Spectral radius
+alone never guarantees that arbitrary context persists.
+\end{theorem}
+
+The proof is an equality coordinate by coordinate and appears in
+Appendix~\ref{app:diagonal-proof}.  This formulation repairs the legacy
+argument, which inserted an upper bound on $\|\bar A^t h_0\|_2$ into a
+signal-to-noise ratio as though it were a lower bound.  Equation
+\eqref{eq:forgetting-upper} certifies forgetting, not memory capacity.
+
+\begin{corollary}[Near-critical regime only]
+\label{cor:near-critical}
+If $\rho=1-\eta$ and $\eta\to0^+$, then
+$-\log(1-\eta)=\eta+O(\eta^2)$, so the upper bound in
+\eqref{eq:forgetting-upper} scales as $O(1/\eta)$.  This approximation is
+not used for large collapse.  In particular, for $\rho=0.32$ we use the
+exact denominator $\log(1/0.32)\approx1.1394$, not $\eta=0.68$.
+\end{corollary}
+
+\paragraph{Driven and time-varying systems.}
+For frozen $\bar A$ and an input sequence with total energy
+$\sum_k\|x_k\|_2^2\leq E$, the driven term is bounded by the finite-horizon
+controllability operator; replacing it by
+$\lambda_{\max}(\mathcal W_c)$ requires this energy assumption and is not
+valid merely from a per-token bound.  For the selective diagonal system
+$h_t=\bar A_t h_{t-1}+\bar B_t x_t$, the unforced term is exactly
+$\prod_{s=1}^t\bar A_s h_0$ and satisfies
+\begin{equation}
+ \left\|\prod_{s=1}^t\bar A_s h_0\right\|_2
+ \leq\left(\prod_{s=1}^t\rho(\bar A_s)\right)\|h_0\|_2.
+\end{equation}
+Every calculation using one frozen $\rho$ is therefore explicitly a local
+stationary approximation, not an identity for the selective LTV system.
+
+\paragraph{Reachability is not proved by continuity.}
+Continuity of $\Delta\mapsto\rho(\exp(\Delta A))$ only describes spectral
+values after a reachable $\Delta$ has been specified.  It does not imply that
+the discrete token-to-$\Delta$ map is injective, surjective, or reaches an
+arbitrary target.  We therefore retract the legacy ``Evasion Existence
+Theorem'' and retain its optimization construction only as a falsifiable
+plausibility hypothesis to be tested experimentally.
+
+\begin{proposition}[Conditional monitor coverage]
+\label{prop:conditional-coverage}
+Suppose an attack crosses a declared threshold,
+$\rho(\bar A_t)\leq\rho_{\min}$, at some observed token.  A monitor that
+computes the diagonal maximum exactly and flags that event detects the attack
+at that token.  Conversely, zero false positives are guaranteed only for a
+benign class with an explicit margin
+$\rho(\bar A_t)>\rho_{\min}$ at every observed token.
+\end{proposition}
+This proposition is conditional by construction; it makes no claim that all
+effective attacks must cross the threshold and no empirical FPR claim before
+the Phase~3 evaluation.
+
+\paragraph{Exact diagonal Lipschitz constant.}
+Write the continuous generator as
+$A=\operatorname{diag}(-q_1,\ldots,-q_d)$ with $q_i>0$.  On
+$\Delta\in[\Delta_{\min},\Delta_{\max}]\subseteq[0,\infty)$,
+let $q_{\min}=\min_i q_i$.  Then
+\begin{align}
+ \rho(e^{\Delta A}) &= e^{-q_{\min}\Delta},\\
+ |\rho(e^{\Delta_1 A})-\rho(e^{\Delta_2 A})|
+ &\leq L_{\mathrm{diag}}|\Delta_1-\Delta_2|,\\
+ L_{\mathrm{diag}} &= q_{\min}e^{-q_{\min}\Delta_{\min}}.
+\end{align}
+The coarse legacy constant
+$\|A\|_2\exp(\Delta_{\max}\|A\|_2)$ ignores the negative diagonal
+structure and is numerically vacuous for the measured checkpoint.  We report
+$\|A\|_2=\max_iq_i$ per layer, but do not call the resulting inverse bound a
+robustness certificate without a measured range for $\Delta_t$.
+
+\section{Threat Model and Attack Construction}
+
+The Phase~2 structural test targets the boundary of
+Proposition~\ref{prop:conditional-coverage}: optimize task loss while
+penalizing any decrease below a benign spectral margin.  For diagonal Mamba,
+changing $\Delta_t$ cannot rotate eigenvectors---they remain coordinate axes.
+The meaningful directional surface is instead the input-dependent
+reachability/readout geometry through $\bar B_t$ and $C_t$.  We therefore call
+the planned test a \emph{directional reachability attack}, with objective
+\begin{equation}
+ \max_x\;\mathcal L_{\mathrm{task}}(x)
+ -\lambda\sum_t[\rho_{\min}+m-\rho(\bar A_t(x))]_+^2,
+\end{equation}
+and require $N\geq200$ held-out examples when token-level reachability is
+tested in the experimental campaign.
+
+\paragraph{Structural counterexample.}
+We instantiated 1,000 seeded diagonal systems.  In every witness, a unit-norm
+readout $C$ was rotated to be orthogonal to the retained state while $\bar A$
+was held bitwise unchanged.  The remembered scalar output fell by 100\%, but a
+radius-only monitor detected 0/1,000 cases (95\% Wilson upper bound 0.38\%).
+For a matched spectral-collapse control, the monitor detected 1,000/1,000
+cases (95\% Wilson lower bound 99.62\%).  This is a model-level counterexample
+to unconditional completeness, not evidence that an arbitrary readout
+rotation is reachable from discrete tokens in the pinned checkpoint.  The
+latter remains an empirical question for the attack campaign.
+
+\section{SpectralGuard Defense}
+
+\section{Experimental Methodology}
+
+\paragraph{Compute and model provenance.}
+Every model load uses an immutable revision SHA, and each run records its seed,
+configuration hash, package versions, model identifier, and model revision.
+The confirmatory campaign evaluated 19,300 rows across seven models and four
+tasks on NVIDIA H100 GPUs, recording 26,725.9 GPU-seconds across resumable
+sessions. Detector fitting uses calibration data, threshold selection uses
+validation data, and the test split is evaluated once. Accuracy intervals are
+Wilson intervals; paired accuracy drops and effect sizes use 2,000 bootstrap
+resamples. We control the three primary paired tests with Benjamini--Hochberg
+at FDR 0.05 and also report paired Wilcoxon tests.
+
+\section{Results and Analysis}
+
+The repaired GPT-2 control no longer exposes the legacy template artifact: a
+classifier using only input length and prompt negative log-likelihood obtains
+AUC 0.533, below the preregistered 0.65 ceiling. This result removes the basis
+for the earlier categorical SSM-versus-Transformer claim; architecture-level
+conclusions are deferred to the complete analysis.
+
+Under one calibration/validation/test protocol, the multilayer SpectralGuard
+detector obtains F1 0.806 and mean AUC 0.887 over five prescribed seeds. The
+same fixed data and deterministic logistic fit produce identical values across
+those seeds. A CLASP-style BOE+XGBoost reimplementation using the published
+design and hyperparameters, but not official pretrained weights, obtains F1
+0.969 and mean AUC 0.997. We therefore make no superiority claim.
+
+Adaptive v2 and detector-aware v3 remain statistically indistinguishable on
+the same 300 prompts: their accuracies are 1.33\% and 1.67\%, respectively
+(paired difference $-0.33$ percentage points, 95\% bootstrap CI
+$[-2.33,1.67]$; McNemar $p=1.0$). Logistic fits of correctness on standardized
+mean spectral radius yield McFadden pseudo-$R^2$ values from 0.0089 to 0.0337,
+indicating weak explanatory power for radius alone. The legacy Mamba-2.8B sign
+reversal does not recur: clean-minus-perturbed $\Delta\rho$ is positive for
+benign, HiSPA-original, and gradient-guided comparisons. Cross-model transfer
+is reported with $N=200$ and Wilson intervals for every model and condition.
+
+\section{Adaptive Threat Model}
+
+\section{Availability and Denial-of-Service Analysis}
+
+\section{Limitations}
+
+The forgetting theorem is exact only for a frozen diagonal transition.  The
+product bound covers time variation but can be loose.  Conditional monitor
+coverage does not establish that spectral collapse is necessary for task
+failure.  The structural counterexample proves that a radius-only monitor is
+incomplete outside its stated assumption, while not proving token-level
+reachability in the learned model.
+The confirmatory detector result is also weaker than the CLASP-style
+reimplementation under the common protocol. The latter is a reimplementation,
+not an evaluation of official pretrained CLASP weights. Low task accuracies on
+several exact-answer cells limit behavioral interpretation, and the five
+SpectralGuard seed labels do not create data-split independence because the
+underlying split and deterministic estimator are fixed.
+
+\section{Conclusion}
+% PENDING: depends on the Phase 7 scientific-positioning decision.
+
+\bibliographystyle{ACM-Reference-Format}
+\bibliography{references}
+
+\appendix
+\section{Diagonal Forgetting Proof}
+\label{app:diagonal-proof}
+Because $\bar A$ is diagonal,
+$\bar A^t h_0=(a_1^th_{0,1},\ldots,a_d^th_{0,d})$, hence
+\begin{equation}
+ \|\bar A^t h_0\|_2^2
+ =\sum_i|a_i|^{2t}|h_{0,i}|^2
+ \leq\rho^{2t}\|h_0\|_2^2.
+\end{equation}
+The right-hand side is at most $\epsilon^2\|h_0\|_2^2$ whenever
+\begin{equation}
+ t\geq\frac{\log(1/\epsilon)}{\log(1/\rho)},
+\end{equation}
+proving the upper bound after taking the ceiling.  On the dominant coordinate
+set, $\|\bar A^tP_\rho h_0\|_2=\rho^t\|P_\rho h_0\|_2$; orthogonality of diagonal
+coordinates gives the stated lower bound.  No controllability or noise
+assumption is used.
+
+\section{Legacy Horizon Arithmetic Audit}
+The legacy pair $H(0.98)=1.17\times10^6$ and $H(0.32)=45$ cannot arise from
+one formula $H(\rho)=C/\log(1/\rho)$ with fixed constants.  The implied
+numerators are approximately $2.36\times10^4$ and $51.3$, respectively, a
+factor above $460$.  Holding the first numerator fixed predicts about
+$2.07\times10^4$ at $\rho=0.32$, not 45.  We therefore remove both values as
+theoretical predictions; any future empirical horizon will be labeled and
+measured directly.  The machine-readable arithmetic and layerwise norms are
+generated by the Phase~2 theory-audit script.
+
+\section{Open Science}
+% PENDING: enumerate each artifact needed to evaluate the core contribution,
+% state how reviewers can access it anonymously, and disclose any unavailable
+% artifacts with the reason.  Keep this appendix within the two-page allowance.
+
+\section{Ethical Considerations}
+% PENDING: assess potential harms, risks versus benefits, safeguards, and the
+% responsible-disclosure plan.  Keep this appendix within the two-page allowance.
+
+\section*{Generative AI Usage Statement}
+% PENDING: replace with a complete, truthful disclosure immediately before submission.
+% This statement is required by the AISec 2026 CFP and is outside the page limit.
+
+\end{document}

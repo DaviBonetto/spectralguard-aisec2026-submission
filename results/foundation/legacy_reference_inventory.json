@@ -1,0 +1,22 @@
+{
+  "bibitem_count": 59,
+  "created_at_utc": "2026-07-16T02:26:40.005121+00:00",
+  "disposition": "Legacy references are not imported wholesale. Each reference enters the new bibliography only when cited and after official metadata validation.",
+  "missing_bibitems": [],
+  "orphaned_bibitems": [
+    "bougerol1985products",
+    "carlini2024aligned",
+    "dao2024mamba2",
+    "gehman2020realtoxicityprompts",
+    "halko2011finding",
+    "hendrycks2021unsolved",
+    "pearl2009causality",
+    "solaiman2019release",
+    "vaswani2017attention",
+    "weidinger2021ethical",
+    "zhu2024vision"
+  ],
+  "schema_version": 1,
+  "source_arxiv": "2603.12414v1",
+  "unique_citation_count": 48
+}
