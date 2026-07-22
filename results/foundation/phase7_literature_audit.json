@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "audit_date": "2026-07-22",
+  "scope": "Hidden-state-poisoning defenses, adaptive defense evaluation, false-positive operational cost, and session- or connection-level security-detector evaluation.",
+  "queries": [
+    "hidden state poisoning session level detection availability Mamba defense",
+    "LLM defense session survival false positive availability detector",
+    "security detector session-level availability false positives",
+    "adaptive attacks defense evaluation"
+  ],
+  "primary_sources": [
+    {
+      "key": "hispa",
+      "url": "https://arxiv.org/abs/2601.01972",
+      "finding": "Introduces hidden-state poisoning and RoBench-25; does not report benign session-survival evaluation for a deployed detector."
+    },
+    {
+      "key": "clasp",
+      "url": "https://arxiv.org/abs/2603.12206",
+      "finding": "Reports token- and document-level detection on controlled resume injections; does not report multi-turn benign session survival under a blocking policy."
+    },
+    {
+      "key": "athalye2018",
+      "url": "https://proceedings.mlr.press/v80/athalye18a.html",
+      "finding": "Establishes the need to evaluate defenses adaptively in their stated threat model."
+    },
+    {
+      "key": "alahmadi2022",
+      "url": "https://www.usenix.org/conference/usenixsecurity22/presentation/alahmadi",
+      "finding": "Shows that false alarms impose operational costs in security practice."
+    },
+    {
+      "key": "piet2023",
+      "url": "https://www.usenix.org/conference/usenixsecurity23/presentation/piet",
+      "finding": "Evaluates a sequential security detector over interactive connections and reports false positives per day, demonstrating that operational or session-like units predate this work."
+    }
+  ],
+  "result": "No source identified in the dedicated search jointly evaluates hidden-state-poisoning detection, attacked-task utility, adaptive evasion, and benign multi-turn session survival. Related security work does evaluate false-positive operational cost and connection-level behavior, so the manuscript makes no general first-study claim for session-level evaluation.",
+  "allowed_claim": "We evaluate benign session survival as one axis of hidden-state-poisoning defense assessment.",
+  "prohibited_claim": "This is the first session-level security-detector evaluation."
+}

@@ -1,0 +1,5 @@
+detector,metric,point_estimate,interval_low,interval_high,interval_kind,resamples,cluster_unit,seed_fits,seed_sd,interpretation
+SpectralGuard,f1,0.8061420345489443,0.795311252644742,0.8176019647928732,cluster bootstrap over fixed test prompt IDs,2000,prompt_id,5,0.0,sampling uncertainty on the fixed test set; the deterministic fits are identical
+SpectralGuard,auc,0.8872944999999999,0.8776214500000001,0.89703623125,cluster bootstrap over fixed test prompt IDs,2000,prompt_id,5,0.0,sampling uncertainty on the fixed test set; the deterministic fits are identical
+CLASP-style BOE+XGBoost reimplementation,f1,0.968899547764084,0.965550044414594,0.9722490511135741,descriptive t interval over training seeds on one shared split,0,not applicable,5,0.002697592387582778,"seed-to-seed training variation, not independent sampling uncertainty"
+CLASP-style BOE+XGBoost reimplementation,auc,0.9965064,0.996244139847951,0.996768660152049,descriptive t interval over training seeds on one shared split,0,not applicable,5,0.00021121668376337472,"seed-to-seed training variation, not independent sampling uncertainty"

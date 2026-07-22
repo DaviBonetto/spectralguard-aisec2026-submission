@@ -1,4 +1,5 @@
 \documentclass[sigconf]{acmart}
+\setlength{\emergencystretch}{1.5em}
 
 % AISec 2026 follows the ACM CCS 2026 formatting instructions, except for
 % its 10-page body + 2-page appendix limit.  The CCS 2026 minimal sample
@@ -11,15 +12,50 @@
   Intelligence and Security}{November 15--19, 2026}{The Hague, Netherlands}
 \acmISBN{978-1-4503-XXXX-X/2018/06}
 
-\title{[PENDING: title depends on Phase 7]}
+\title{Detection Is Not Defense: Stress-Testing Spectral Monitoring for Hidden-State Poisoning}
 
-% CCS concepts must be generated with the ACM CCS classifier once the final
-% contribution and title are fixed in Phase 7.  Do not invent taxonomy IDs.
-% The final submission must retain the generated CCSXML block and \ccsdesc.
+\begin{CCSXML}
+<ccs2012>
+<concept>
+<concept_id>10002978.10002997</concept_id>
+<concept_desc>Security and privacy~Intrusion/anomaly detection and malware mitigation</concept_desc>
+<concept_significance>500</concept_significance>
+</concept>
+<concept>
+<concept_id>10010147.10010257</concept_id>
+<concept_desc>Computing methodologies~Machine learning</concept_desc>
+<concept_significance>300</concept_significance>
+</concept>
+</ccs2012>
+\end{CCSXML}
+
+\ccsdesc[500]{Security and privacy~Intrusion/anomaly detection and malware mitigation}
+\ccsdesc[300]{Computing methodologies~Machine learning}
 \keywords{state space models, machine learning security, adversarial machine learning, model robustness}
 \begin{document}
 \begin{abstract}
-% PENDING: depends on the Phase 7 scientific-positioning decision.
+Hidden-state poisoning can corrupt the recurrent memory of state-space
+language models, but a detector-level score does not establish preserved task
+behavior or operational availability. We first repair the theoretical basis
+for spectral monitoring: for frozen diagonal transitions we derive an exact
+forgetting certificate, and a constructive study of 1,000 diagonal systems
+shows that readout failure can coexist with an unchanged spectral radius,
+ruling out unconditional completeness for radius-only monitoring. We then
+stress-test layer-wise spectral detection under a leakage-controlled protocol
+spanning seven models, four tasks, and 19,300 evaluated rows. SpectralGuard
+obtains F1 0.806 and AUC 0.887, whereas a CLASP-style BOE+XGBoost comparator
+obtains mean F1 0.969 and AUC 0.997 under the same internal split protocol.
+Detector-aware adaptive attacks reduce attacked task accuracy to 1.67\%,
+statistically indistinguishable from 1.33\% for the preceding adaptive attack
+in a floor-saturated comparison; standardized mean spectral radius alone has
+weak explanatory power for correctness (McFadden pseudo-$R^2$
+0.0089--0.0337). Finally, a fail-closed policy blocks all 320 held-out clean
+sessions, while a validation-selected graduated policy allows only 8/320 to
+survive and incurs 4.29$\times$ total latency. These results show that spectral
+features carry predictive signal, but neither high aggregate detection scores
+nor radius-only mechanisms establish a robust and available defense.
+Hidden-state-poisoning evaluations must jointly test detection, attacked-task
+utility, adaptive evasion, and session-level availability.
 \end{abstract}
 \maketitle
 
@@ -27,7 +63,44 @@
 % acknowledgments, funding statement, or identifying repository URL appears.
 
 \section{Introduction}
-% PENDING: central SSM-versus-Transformer claim is calibrated in Phase 7.
+State-space language models (SSMs) offer linear-time sequence processing by
+maintaining a recurrent hidden state. That state is also a security boundary:
+a short hostile insertion can alter later behavior without remaining in the
+visible context. Hidden State Poisoning Attacks (HiSPAs) demonstrate this
+failure mode in Mamba-family models \cite{lemercier2026hispa}. A natural
+response is to monitor internal dynamics, but a high detector score answers
+only whether selected attacks are separable on a benchmark. It does not show
+that useful behavior survives an adaptive attack, that a scalar statistic is a
+complete failure indicator, or that false alarms permit benign sessions to
+continue.
+
+We examine that gap through SpectralGuard, a layer-wise monitor derived from
+the discretized state transition. The study began with a stronger hypothesis:
+that spectral contraction explained hidden-state poisoning and enabled a
+complete detector. Our audit rejects that hypothesis. Spectral radius gives an
+exact forgetting upper bound for frozen diagonal transitions, yet an unchanged
+radius can coexist with total readout loss. Empirically, radius is predictive
+but weakly explanatory, and a richer spectral detector is substantially
+outperformed by a CLASP-style block-output-embedding comparator under one
+shared internal protocol. Most importantly, adaptive attacks preserve very
+low attacked-task accuracy, while a fail-closed deployment rule denies service
+to every clean held-out session.
+
+This paper makes five contributions:
+\begin{itemize}
+  \item We replace an invalid persistence argument with an exact diagonal
+  forgetting certificate and state its assumptions explicitly.
+  \item We provide 1,000 constructive counterexamples showing that a
+  radius-only monitor is not unconditionally complete.
+  \item We evaluate SpectralGuard across seven models, four tasks, and 19,300
+  rows with disjoint calibration, validation, and test roles.
+  \item We compare against a CLASP-style BOE+XGBoost implementation and
+  distinguish fixed-test-set bootstrap uncertainty from seed-to-seed training
+  variation; we make no detector-superiority claim.
+  \item We connect detection to attacked-task utility, adaptive evasion, and
+  multi-turn availability, revealing a defense-induced denial-of-service
+  failure that aggregate F1 and AUC conceal.
+\end{itemize}
 
 \section{Background and Related Work}
 
@@ -50,6 +123,20 @@ uses the published CLASP design elements rather than official pretrained
 weights; accordingly, we claim neither that the reimplementation is identical
 to the authors' release nor that SpectralGuard is empirically superior.
 
+Adaptive evaluation must also test whether a defense relies on brittle or
+obfuscated gradients \cite{athalye2018obfuscated}. More broadly, security
+systems can impose operational costs that benchmark-level false-positive rates
+hide. Alahmadi et al. quantify the cost of false positives in network intrusion
+detection \cite{alahmadi2022falsepositives}, while Piet et al. evaluate SSH
+defenses at connection and deployment scales \cite{piet2023ssh}. We performed
+a dedicated search of work on hidden-state poisoning, adaptive detector
+evaluation, and session- or connection-level availability. We found no prior
+study that jointly measures hidden-state-poisoning detection, attacked-task
+utility, adaptive evasion, and benign multi-turn session survival. This is a
+scope observation used to motivate our evaluation matrix; we make no general
+priority claim because adjacent security work already studies operational false
+positives and connection-level effects.
+
 \section{Spectral Foundations and Theory}
 
 \paragraph{Condition-number convention.}
@@ -57,8 +144,9 @@ We use $\kappa=\operatorname{cond}_2(V)$ for an eigenvector matrix $V$ that
 diagonalizes the state-transition operator; this is distinct from
 $\operatorname{cond}_2(A)$.  In the pinned Mamba-130M checkpoint, all 24
 continuous-time $A$ operators (and consequently $\exp(\Delta_t A)$) are real
-and diagonal.  Thus $V=I$ and $\kappa=1$ exactly.  A direct audit of revision
-\texttt{1e76775f628fbf1350fbe4dbb3d971ba64af25a1} confirms this structure.
+and diagonal. Thus $V=I$ and $\kappa=1$ exactly. A direct audit of revision
+prefix \texttt{1e76775f628f} confirms this structure; the artifact records the
+complete immutable revision.
 The legacy value $\kappa\approx3$ is unsupported and is not used in the
 revised analysis.
 
@@ -194,18 +282,64 @@ latter remains an empirical question for the attack campaign.
 
 \section{SpectralGuard Defense}
 
+For every observed token and Mamba layer, SpectralGuard extracts the maximum
+magnitude of the diagonal discretized transition and summarizes the resulting
+layer-wise trajectory. The frozen detector uses 64 summary features and a
+deterministic logistic regression fit on calibration data. Validation data
+selects its decision threshold; test labels are never used for feature,
+classifier, or threshold selection. This detector tests whether spectral
+dynamics contain useful signal. It is not presented as a deployable
+defense or as a complete detector.
+
+We evaluate two response policies. Algorithm~2 is fail closed: one alert
+blocks a session. Algorithm~2b is a graduated $k$-of-$w$ rule selected on
+validation sessions. Both use the same frozen detector. This separation lets
+us distinguish representation quality, threshold calibration, and operational
+policy. It also prevents an availability improvement from being obtained by
+refitting the detector on held-out sessions.
+
 \section{Experimental Methodology}
+
+\paragraph{Data and splits.}
+The protocol covers associative recall, GSM8K, MMLU, and LongBench Qasper.
+Prompt identifiers, task labels, and split assignments are frozen before
+fitting. The common detector comparison uses 1,200 calibration, 800
+validation, and 4,000 test rows: 1,000 held-out prompt clusters under clean,
+HiSPA-original, gradient-guided, and adaptive-v2 conditions. No prompt cluster
+crosses split roles. The prescribed seeds are 42, 123, 456, 789, and 2026.
+The deterministic SpectralGuard fit is identical across those seed labels;
+the stochastic XGBoost comparator is refit at every seed.
+
+\paragraph{Attacks and controls.}
+We retain the published HiSPA trigger as a fixed reference and add
+gradient-guided, detector-aware adaptive-v2, query-only black-box,
+transfer-based, and joint white-box attacks. Query and optimization budgets are
+frozen before the test evaluation. A GPT-2 negative control tests for prompt
+length and likelihood artifacts. Phase~5 evaluates a separately constructed
+adversarial-benign trigger and a matched benign control without refitting the
+detector.
 
 \paragraph{Compute and model provenance.}
 Every model load uses an immutable revision SHA, and each run records its seed,
 configuration hash, package versions, model identifier, and model revision.
 The confirmatory campaign evaluated 19,300 rows across seven models and four
-tasks on NVIDIA H100 GPUs, recording 26,725.9 GPU-seconds across resumable
-sessions. Detector fitting uses calibration data, threshold selection uses
-validation data, and the test split is evaluated once. Accuracy intervals are
-Wilson intervals; paired accuracy drops and effect sizes use 2,000 bootstrap
-resamples. We control the three primary paired tests with Benjamini--Hochberg
-at FDR 0.05 and also report paired Wilcoxon tests.
+tasks on NVIDIA H100 GPUs. Phase~3 records 26,725.9 recorded GPU-seconds across
+resumable sessions. We do not add incomplete fragments from Phases~4--5 and
+therefore do not report an unsupported total-compute figure. Detector fitting
+uses calibration data, threshold selection uses validation data, and the test
+split is evaluated once. Accuracy intervals are Wilson intervals; paired
+accuracy drops and effect sizes use 2,000 bootstrap resamples. We control the
+three primary paired tests with Benjamini--Hochberg at FDR 0.05 and also report
+paired Wilcoxon tests.
+
+\paragraph{Nonexchangeable uncertainty.}
+For SpectralGuard, we use a 2,000-resample cluster bootstrap over the fixed test
+prompt IDs, carrying all four conditions for a sampled prompt together. This
+is sampling uncertainty on the fixed test set. For the CLASP-style comparator,
+we report a descriptive $t$ interval over five stochastic refits: it is
+seed-to-seed training variation on the same shared split, not independent
+sampling uncertainty. The two interval types are labeled separately and are
+not interpreted as interchangeable error bars.
 
 \section{Results and Analysis}
 
@@ -216,11 +350,32 @@ for the earlier categorical SSM-versus-Transformer claim; architecture-level
 conclusions are deferred to the complete analysis.
 
 Under one calibration/validation/test protocol, the multilayer SpectralGuard
-detector obtains F1 0.806 and mean AUC 0.887 over five prescribed seeds. The
-same fixed data and deterministic logistic fit produce identical values across
-those seeds. A CLASP-style BOE+XGBoost reimplementation using the published
-design and hyperparameters, but not official pretrained weights, obtains F1
-0.969 and mean AUC 0.997. We therefore make no superiority claim.
+detector obtains F1 0.806 and AUC 0.887 (Table~\ref{tab:detectors}). The same
+fixed data and deterministic logistic fit produce identical values across the
+five seed labels. Its intervals therefore come from the cluster bootstrap over
+the fixed test prompt IDs, not from those duplicated fits. A CLASP-style
+BOE+XGBoost reimplementation using the published design and hyperparameters,
+but not official pretrained weights, obtains mean F1 0.969 and AUC 0.997. Its
+interval describes seed-to-seed training variation on the same shared split,
+not independent sampling uncertainty. We make no detector-superiority claim.
+
+\begin{table}[t]
+\caption{Common-protocol detector results. SG intervals are 95\% cluster
+bootstrap CIs over fixed test prompt IDs; comparator intervals are descriptive
+95\% $t$ intervals over five training seeds. They quantify different sources
+of variation.}
+\label{tab:detectors}
+\centering
+\small
+\begin{tabular}{lcc}
+\toprule
+Detector & F1 & AUC \\
+\midrule
+SpectralGuard & .806 [.795, .818] & .887 [.878, .897] \\
+CLASP-style & .969 [.966, .972] & .997 [.9962, .9968] \\
+\bottomrule
+\end{tabular}
+\end{table}
 
 Adaptive v2 and detector-aware v3 remain statistically indistinguishable on
 the same 300 prompts: their accuracies are 1.33\% and 1.67\%, respectively
@@ -232,7 +387,49 @@ reversal does not recur: clean-minus-perturbed $\Delta\rho$ is positive for
 benign, HiSPA-original, and gradient-guided comparisons. Cross-model transfer
 is reported with $N=200$ and Wilson intervals for every model and condition.
 
+\begin{table}[t]
+\caption{Adaptive task accuracy on the same 300 prompts. The comparison is
+in a floor-saturated regime; failure to distinguish the attacks is not evidence of equal
+power.}
+\label{tab:adaptive}
+\centering
+\small
+\begin{tabular}{lcc}
+\toprule
+Attack & Correct & Accuracy \\
+\midrule
+Adaptive v2 & 4/300 & 1.33\% \\
+Detector-aware v3 & 5/300 & 1.67\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The Phase~4 escalation confirms that the conclusion is not an artifact of one
+adaptive recipe. Under the frozen detector, black-box transfer, query-only,
+and joint white-box attacks yield F1 0.810, 0.786, and 0.746, respectively;
+their AUCs are 0.905, 0.863, and 0.829. The joint white-box cell is the
+prespecified worst-case endpoint. These values show degradation under stronger
+attacker knowledge, while remaining detector metrics rather than guarantees of
+preserved task utility.
+
 \section{Adaptive Threat Model}
+
+We consider four attacker knowledge levels. The reference attacker knows the
+model family and published trigger but not the detector. The gradient-guided
+attacker optimizes task loss through the victim model. The query-only attacker
+observes bounded detector decisions without gradients, and the joint
+white-box attacker differentiates through both task and detector objectives.
+Transfer attacks are generated on a surrogate and evaluated without target
+model updates. All cells preserve fixed prompt sets, query budgets, attack
+restart counts, and selection rules. Candidate selection occurs on validation
+data; test results are not used to tune attack hyperparameters.
+
+This protocol follows the principle that robustness claims must survive an
+adaptive adversary rather than only a fixed attack \cite{athalye2018obfuscated}.
+It still does not cover arbitrary token budgets, unrestricted finetuning,
+weight-space attacks, or service-specific side channels. Consequently, the
+joint white-box result is a strong bounded stress test, not a universal
+worst-case certificate.
 
 \section{Availability and Denial-of-Service Analysis}
 
@@ -250,6 +447,21 @@ validation sessions.  Thus the graduated response is directionally better than
 the fail-closed baseline while remaining operationally unusable under this
 frozen detector.  We report this as a negative availability result and make no
 claim that Algorithm~2b resolves defense-induced denial of service.
+
+\begin{table}[t]
+\caption{Held-out three-turn session availability ($N=320$ per condition).}
+\label{tab:availability}
+\centering
+\small
+\begin{tabular}{lcc}
+\toprule
+Policy & Clean survival & Malicious block \\
+\midrule
+Fail closed (Alg.~2) & 0/320 (0\%) & 320/320 (100\%) \\
+Graduated (Alg.~2b) & 8/320 (2.5\%) & 320/320 (100\%) \\
+\bottomrule
+\end{tabular}
+\end{table}
 
 \section{Limitations}
 
@@ -274,7 +486,18 @@ session distribution or a different decision statistic; neither is evaluated
 post hoc here.
 
 \section{Conclusion}
-% PENDING: depends on the Phase 7 scientific-positioning decision.
+Spectral monitoring is informative, but detection is not defense. For frozen
+diagonal transitions, spectral radius certifies an upper bound on forgetting;
+it does not certify arbitrary memory persistence or readout integrity. In our
+experiments, richer layer-wise spectral features detect many poisoned states,
+yet a CLASP-style embedding comparator is stronger on the shared split,
+detector-aware attacks preserve catastrophic task failure, and both frozen
+response policies impose unacceptable clean-session denial of service. The
+appropriate conclusion is therefore methodological rather than architectural:
+hidden-state-poisoning defenses should be evaluated jointly on detection,
+attacked-task utility, adaptive evasion, and operational availability. A
+deployable defense will require a statistic and calibration regime that improve
+all four, not merely aggregate F1 or AUC.
 
 \bibliographystyle{ACM-Reference-Format}
 \bibliography{references}
@@ -309,9 +532,18 @@ measured directly.  The machine-readable arithmetic and layerwise norms are
 generated by the Phase~2 theory-audit script.
 
 \section{Open Science}
-% PENDING: enumerate each artifact needed to evaluate the core contribution,
-% state how reviewers can access it anonymously, and disclose any unavailable
-% artifacts with the reason.
+The linked \href{https://anonymous.4open.science/r/spectralguardaisec26/}{anonymous
+review artifact} contains the
+frozen configurations, split manifests, model revisions, seeds, experiment
+runners, statistical analysis, tests, compact result tables, and clean
+notebooks required to reproduce the paper's core claims. It records the exact
+feature schema and the distinction between cluster-bootstrap intervals and
+seed-to-seed descriptive intervals. Model weights and public benchmark data
+are retrieved from their original providers at pinned identifiers; caches are
+excluded. Credentials, machine-local state, raw multi-gigabyte downloads, and
+author-identifying material are not included. Every published table is derived
+from tracked compact evidence, and artifact checks reject absolute local paths,
+dirty notebook outputs, unfrozen model revisions, and duplicate split roles.
 
 \section{Ethical Considerations}
 \paragraph{Scope, stakeholders, and oversight.}
@@ -369,7 +601,11 @@ be preserved at a stable archival location; acceptance would trigger
 de-anonymization and replacement of the review URL with that permanent record.
 
 \section*{Generative AI Usage Statement}
-% PENDING: replace with a complete, truthful disclosure immediately before submission.
-% This statement is required by the AISec 2026 CFP and is outside the page limit.
+Generative AI tools were used for methodological critique, code assistance,
+statistical cross-checking, literature-query formulation, and language editing.
+The authors inspected and revised all generated material, executed the
+experiments, verified every reported value against the released evidence, and
+take full responsibility for the paper's claims, code, and citations. No
+generative AI system is listed as an author.
 
 \end{document}

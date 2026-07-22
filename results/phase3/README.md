@@ -19,6 +19,15 @@ are identical because the fitted logistic estimator is deterministic on the
 fixed data; this zero between-seed variation must be disclosed rather than
 presented as independent data variability.
 
+`summaries/detector_uncertainty.csv` resolves the two nonexchangeable sources
+of uncertainty. SpectralGuard F1 is 0.806142 with a 95% cluster-bootstrap CI
+[0.795311, 0.817602] over 1,000 fixed test prompt IDs and 2,000 resamples. The
+CLASP-style mean F1 is 0.968900 with a descriptive 95% t interval
+[0.965550, 0.972249] over five stochastic training seeds on the same shared
+split. The latter is seed-to-seed training variation, not independent sampling
+uncertainty; the two intervals must not be drawn or interpreted as equivalent
+error bars.
+
 The adaptive v2/v3 accuracy difference is -0.00333 (95% paired bootstrap CI
 [-0.02333, 0.01667], McNemar p=1.0). McFadden pseudo-R2 ranges from 0.00890 to
 0.03375 across the four main conditions, so rho alone has weak explanatory

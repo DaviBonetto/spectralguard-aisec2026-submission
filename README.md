@@ -10,7 +10,7 @@ weights, caches, credentials, and machine-local notebook state are excluded.
 
 ## Status
 
-Phases 0--6 are complete:
+Phases 0--6 are complete, and Phase 7 scientific positioning is complete:
 the repository and environment are reproducible,
 the checkpoint foundations have been audited, and the theoretical claims have
 been repaired and independently verified. Phase 3 completed 18/18 preregistered
@@ -37,6 +37,14 @@ affected stakeholders and dual-use risks; explains safeguards and the
 risk--benefit decision; states the IRB/ERB determination; and describes the
 artifact's actual MIT-licensed release without claiming an embargo or
 coordinated disclosure that did not occur.
+
+Phase 7 freezes the submission title, abstract, contribution boundary, and
+complete manuscript. It adds a 2,000-resample prompt-cluster bootstrap for the
+deterministic SpectralGuard result, labels the CLASP-style interval separately
+as seed-to-seed training variation on one shared split, and records a dedicated
+primary-source literature audit. The manuscript makes no detector-superiority,
+production-readiness, or general priority claim. Raw research archives are
+stored physically outside the repository rather than merely ignored.
 
 ## Repository layout and publication policy
 
