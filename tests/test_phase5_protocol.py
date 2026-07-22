@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import json
 import subprocess
+import sys
+from pathlib import Path
 
 import pytest
 
@@ -105,3 +107,14 @@ def test_phase5_export_paths_are_ignored_runtime_files():
     config = load_phase5_config()
     for key in ("experiments_zip", "handoff_tar", "final_zip"):
         assert config["exports"][key].startswith("Experiments/")
+
+
+def test_tracked_phase5_evidence_is_self_verifying():
+    completed = subprocess.run(
+        [sys.executable, "scripts/verify_phase5_results.py"],
+        cwd=Path(__file__).resolve().parents[1],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    assert "complete negative availability result" in completed.stdout

@@ -1,0 +1,20 @@
+{
+  "checks": {
+    "both_policies_reported": true,
+    "complete_unique_prompt_matrix": true,
+    "complete_unique_session_matrix": true,
+    "finite_overhead": true,
+    "five_distinct_candidate_seeds": true,
+    "four_conditions_reported": true,
+    "frozen_detector_identical": true,
+    "h100_run_complete": true,
+    "heldout_benignity_reported": true,
+    "no_detector_refit": true,
+    "portable_report_paths": true,
+    "selection_is_validation_only": true,
+    "session_confidence_intervals": true,
+    "validation_tradeoff_complete": true
+  },
+  "schema_version": 1,
+  "status": "PASS"
+}

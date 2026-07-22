@@ -1,0 +1,9 @@
+condition,policy,k,w,sessions,survival_rate,survival_ci_low,survival_ci_high,hard_block_rate,flag_window_rate,blocked_window_rate,window_fpr,selected_on
+clean,algorithm2,,,320,0.0,0.0,0.0,1.0,0.0,0.9873975409836065,0.9873975409836065,frozen_original
+clean,algorithm2b,4.0,4.0,320,0.025,0.009375,0.04375,0.975,0.08312440643099014,0.7323761441995664,0.7323761441995664,validation
+matched_benign_control,algorithm2,,,320,0.0,0.0,0.0,1.0,0.0,0.989702868852459,0.989702868852459,frozen_original
+matched_benign_control,algorithm2b,4.0,4.0,320,0.0,0.0,0.0,1.0,0.07308695992081177,0.8222148854342842,0.8222148854342842,validation
+adversarial_benign,algorithm2,,,320,0.0,0.0,0.0,1.0,0.0,0.9897540983606558,0.9897540983606558,frozen_original
+adversarial_benign,algorithm2b,4.0,4.0,320,0.0,0.0,0.0,1.0,0.07265803835218432,0.824087855286591,0.824087855286591,validation
+malicious_whitebox,algorithm2,,,320,0.0,0.0,0.0,1.0,0.0,0.9897540983606558,,frozen_original
+malicious_whitebox,algorithm2b,4.0,4.0,320,0.0,0.0,0.0,1.0,0.07265803835218432,0.8241390847947878,,validation

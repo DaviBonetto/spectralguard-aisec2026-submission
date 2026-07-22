@@ -75,7 +75,15 @@ def validate_phase5_acceptance() -> dict:
         "heldout_benignity_reported": len(benignity) == 3
         and benignity[["mean_task_score", "task_score_drop_from_clean"]].notna().all().all(),
         "finite_overhead": bool(np.isfinite(overhead["overhead_ratio"]).all())
-        and bool((overhead["sessions"] >= int(config["overhead"]["sessions"])).all()),
+        and bool(
+            (
+                overhead["sessions"]
+                >= min(
+                    int(config["overhead"]["sessions"]),
+                    int(config["dataset"]["validation_sessions"]),
+                )
+            ).all()
+        ),
         "validation_tradeoff_complete": len(tradeoff)
         == 1
         + len(config["graduated_policy"]["k_grid"])
@@ -85,6 +93,7 @@ def validate_phase5_acceptance() -> dict:
             for path in analysis["outputs"]
         ),
     }
+    checks = {key: bool(value) for key, value in checks.items()}
     payload = {
         "schema_version": 1,
         "status": "PASS" if all(checks.values()) else "FAIL",

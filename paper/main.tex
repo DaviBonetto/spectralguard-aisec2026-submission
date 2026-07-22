@@ -231,6 +231,21 @@ is reported with $N=200$ and Wilson intervals for every model and condition.
 
 \section{Availability and Denial-of-Service Analysis}
 
+We evaluated availability at the session level rather than treating a
+per-window false-positive rate as sufficient.  The frozen single-alert policy
+(Algorithm~2) hard-blocked all 320 clean three-turn test sessions.  A
+validation-only search selected the graduated $k$-of-$w$ policy
+($k=4,w=4$), which retained a 100\% hard-block rate on the frozen malicious
+white-box condition.  On held-out clean sessions, however, survival increased
+only to 8/320 (2.5\%, bootstrap 95\% CI [0.94\%, 4.38\%]).  Matched benign
+controls and adversarial-benign prompts both yielded 0/320 surviving sessions.
+The clean blocked-window rate fell from 98.74\% to 73.24\%, but monitoring
+increased measured runtime by 328.53\% (4.29$\times$ total latency) over 60
+validation sessions.  Thus the graduated response is directionally better than
+the fail-closed baseline while remaining operationally unusable under this
+frozen detector.  We report this as a negative availability result and make no
+claim that Algorithm~2b resolves defense-induced denial of service.
+
 \section{Limitations}
 
 The forgetting theorem is exact only for a frozen diagonal transition.  The
@@ -245,6 +260,13 @@ not an evaluation of official pretrained CLASP weights. Low task accuracies on
 several exact-answer cells limit behavioral interpretation, and the five
 SpectralGuard seed labels do not create data-split independence because the
 underlying split and deterministic estimator are fixed.
+The availability sessions are deterministic compositions of held-out benchmark
+prompts rather than live user traffic.  More importantly, the frozen detector
+is nearly saturated on clean session windows: graduation improves survival only
+marginally and does not distinguish the crafted benign condition from its
+matched control.  Deployment therefore requires recalibration on a disjoint
+session distribution or a different decision statistic; neither is evaluated
+post hoc here.
 
 \section{Conclusion}
 % PENDING: depends on the Phase 7 scientific-positioning decision.

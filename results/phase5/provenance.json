@@ -1,0 +1,40 @@
+{
+  "execution_commit": "9bfccd16b8faf59b88d429117f31ee54da9871cb",
+  "input_archives": {
+    "phase5_experiments.zip": {
+      "bytes": 21302250,
+      "internal_sha256_entries_verified": 24,
+      "raw_adversarial_benign_prompt_rows": 900,
+      "raw_adversarial_benign_prompts_sha256": "9a1f2f680aec832bc3ddafc8ecf4a17e82190fa7a3efa81bf4704ee7f7a50b18",
+      "raw_session_rows": 1520,
+      "raw_session_traces_sha256": "6fe4c6ebe57e4ea2631c16c112c4ba7cb9fb913ac80ef5dac054c01c8d0daa45",
+      "sha256": "470ef000a2aeb6c4cf977c50920016867c1a22ab53510dd9e811e4ea7a29df5f"
+    },
+    "phase5_final.zip": {
+      "bytes": 26260,
+      "internal_sha256_entries_verified": 18,
+      "sha256": "f19ed4462c03726a84d6d636f322696860e0c0fda474d095eb8820e1b7f870a0"
+    }
+  },
+  "post_run_recovery": {
+    "gpu_rows_changed": false,
+    "reason": "The H100 run completed all data-producing stages; CPU-only export repaired NumPy boolean serialization and the overhead sample-count gate.",
+    "recorded_elapsed_seconds": 3786.889788554
+  },
+  "published_artifacts": {
+    "results/phase5/attacks/adversarial_benign_candidates.json": "68284189c84e62342cc0099fccaec91e96b0becb702f46df49087b92dbe707fb",
+    "results/phase5/attacks/matched_benign_control.json": "eaa2ac6f07e08046ec35252a64bf49f20c0cf3f2dedca4dfdadc18d6b7500753",
+    "results/phase5/attacks/selected_adversarial_benign.json": "a435fbf27e2968fbd2287e5fca32e38426e77fc194cba2e789850f9539296d77",
+    "results/phase5/figures/availability_frontier.pdf": "edafa7ae2faab2068eff51f964b73369967c5bc7177f172f40687e53dafa1aff",
+    "results/phase5/manifests/frozen_detector.json": "6737a8c547c1908b3979e3e91d1f057272ca557604f8fe9d4b2cac70740b146c",
+    "results/phase5/manifests/frozen_malicious_attack.json": "6f66ca7ad96f82747665f859186ff3658e4e766b99b9f89fe17e25271ffb76f8",
+    "results/phase5/manifests/phase5_acceptance.json": "1a6864a31a0389205aeb09347a5554e422b0f3bb07cc927b55273b2f5a47689c",
+    "results/phase5/manifests/preflight.json": "11d348cf5b160b4f15cff78b2eb1c2b56a5628947dfb2d38ccffa9db998d40fb",
+    "results/phase5/summaries/adversarial_benign.csv": "007422e6ceb16afa952c63fac440e73e115831b62891a415ca11ab51563e495e",
+    "results/phase5/summaries/analysis_report.json": "bfc32d0438ed3d4c657d78f4fef547713c08d9809295d8318502584364cfb70c",
+    "results/phase5/summaries/availability_tradeoff.csv": "14324b1cc1c690c5723297898be5e4b8050c8b6f533abc0e186c6d3cc100f26b",
+    "results/phase5/summaries/runtime_overhead.csv": "a4bf018e18129a6ad410e15dc75d8cb2052ad599d4ee4391d843f80adc971d01",
+    "results/phase5/summaries/session_survival.csv": "7116f6cae32d050f4380fa88c53e17cb4420b992ffbfe310182f991db7512792"
+  },
+  "schema_version": 1
+}

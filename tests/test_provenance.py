@@ -37,12 +37,7 @@ def test_public_tree_contains_no_local_or_placeholder_artifacts() -> None:
         re.compile(r"@(?:gmail|outlook|hotmail|yahoo)[.]", re.I),
     )
     for relative in tracked:
-        content = subprocess.run(
-            ["git", "show", f"HEAD:{relative}"],
-            cwd=root,
-            check=True,
-            capture_output=True,
-        ).stdout.decode("utf-8", errors="ignore")
+        content = (root / relative).read_bytes().decode("utf-8", errors="ignore")
         assert not any(pattern.search(content) for pattern in blocked), relative
 
 

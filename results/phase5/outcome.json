@@ -1,0 +1,23 @@
+{
+  "availability_objective_achieved": false,
+  "execution_integrity": "PASS",
+  "interpretation": "The validation-selected graduated policy preserves frozen malicious-session capture but does not restore usable benign availability. This is a complete negative result, not a positive deployment claim.",
+  "key_results": {
+    "adversarial_benign_session_survival": 0.0,
+    "algorithm2_clean_session_survival": 0.0,
+    "algorithm2b_clean_session_survival": 0.025,
+    "algorithm2b_clean_survival_ci_95": [
+      0.009375,
+      0.04375
+    ],
+    "algorithm2b_malicious_hard_block_rate": 1.0,
+    "matched_benign_control_session_survival": 0.0,
+    "monitoring_overhead_percent": 328.5259319701344,
+    "selected_k": 4,
+    "selected_w": 4,
+    "test_sessions_per_condition": 320
+  },
+  "schema_version": 1,
+  "scientific_outcome": "NEGATIVE",
+  "status": "COMPLETE"
+}

@@ -1,0 +1,15 @@
+{
+  "bf16": true,
+  "commit": "9bfccd16b8faf59b88d429117f31ee54da9871cb",
+  "config_sha256": "1a376aef930c1283891e6488dcea8a5a0c449c6048b8b91784236f9bf8dbfcba",
+  "cuda": "12.8",
+  "detector_sha256": "6737a8c547c1908b3979e3e91d1f057272ca557604f8fe9d4b2cac70740b146c",
+  "free_disk_gib": 1907.0238418579102,
+  "gpu": "NVIDIA H100 80GB HBM3",
+  "gpu_memory_gib": 79.1787109375,
+  "malicious_attack_sha256": "56da0a47d77c666c5e7cc4e3d27bb24abfae6b1b78f60f6a4c6e2ae72b53a70f",
+  "python": "3.12.11 | packaged by Anaconda, Inc. | (main, Jun  5 2025, 13:09:17) [GCC 11.2.0]",
+  "schema_version": 1,
+  "status": "PASS",
+  "torch": "2.8.0+cu128"
+}

@@ -1,0 +1,29 @@
+{
+  "claims_policy": "Report the availability gain only if the validation-selected policy satisfies the frozen attack-capture constraint; otherwise report a negative result.",
+  "detector_refit": false,
+  "limitations": [
+    "Sessions are deterministic concatenations of held-out benchmark prompts, not live user logs.",
+    "The adversarial-benign optimizer is white-box and bounded by the frozen compute budget."
+  ],
+  "outputs": [
+    "Experiments/phase5/summaries/availability_tradeoff.csv",
+    "Experiments/phase5/summaries/session_survival.csv",
+    "Experiments/phase5/summaries/adversarial_benign.csv",
+    "Experiments/phase5/summaries/runtime_overhead.csv",
+    "Experiments/phase5/figures/availability_frontier.pdf"
+  ],
+  "primary_unit": "session_id",
+  "schema_version": 1,
+  "selection_policy": {
+    "capture_constraint_satisfied": true,
+    "k": 4,
+    "maximum_attack_capture_drop": 0.05,
+    "policy": "algorithm2b",
+    "selected_on": "validation",
+    "w": 4
+  },
+  "status": "PASS",
+  "test_prompts_per_condition": 300,
+  "test_sessions_per_condition": 320,
+  "threshold_selected_on": "phase3_validation"
+}

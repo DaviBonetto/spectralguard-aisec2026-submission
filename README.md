@@ -10,7 +10,7 @@ weights, caches, credentials, and machine-local notebook state are excluded.
 
 ## Status
 
-Phases 0--4 are complete and Phase 5 is protocol-complete pending execution:
+Phases 0--5 are complete:
 the repository and environment are reproducible,
 the checkpoint foundations have been audited, and the theoretical claims have
 been repaired and independently verified. Phase 3 completed 18/18 preregistered
@@ -23,6 +23,13 @@ Phase 4 completed the frozen 1,200-row adaptive matrix, all nine white-box
 lambda/seed cells, and the preregistered query-only comparison. Its semantic
 gate passes, but only 13/300 clean prompts were eligible for conditional ASR;
 the tracked report therefore treats low coverage as a primary limitation.
+
+Phase 5 completed 1,520 session-condition traces and 900 held-out prompt
+evaluations. Its result is negative: the validation-selected graduated policy
+retains 100% malicious-session capture, but clean test-session survival rises
+only from 0/320 under Algorithm 2 to 8/320 (2.5%, bootstrap 95% CI
+[0.94%, 4.38%]) under Algorithm 2b. Monitoring adds 328.5% runtime overhead.
+The repository therefore makes no practical-availability claim.
 
 ## Repository layout and publication policy
 
@@ -201,7 +208,11 @@ malicious-session capture remains within the frozen five-point tolerance.
 
 The `k,w` pair is selected only on validation. It may improve benign session
 survival only while retaining attack capture within the frozen five-point
-tolerance; otherwise the analysis publishes a negative result. A separate
+tolerance; otherwise the analysis publishes a negative result. The completed
+campaign selected `k=4,w=4` and produced exactly that negative outcome: clean
+test-session survival was 2.5%, while the matched benign control,
+adversarial-benign condition, and malicious white-box condition all had 0%
+session survival. A separate
 five-seed white-box adversarial-benign optimizer attempts to trigger the
 detector while preserving benign task score, with 300 held-out prompts and a
 matched benign control. The frozen Phase 3 detector is never refit.
@@ -220,6 +231,13 @@ Before spending GPU credits, run:
 ```
 
 The downloadable outputs are `Experiments/exports/phase5_experiments.zip` and
-`Experiments/exports/phase5_final.zip`. Phase 5 is complete only when
-`scripts/verify_phase5_results.py` reports `PHASE 5 RESULTS: PASS`; archive
-existence alone is not scientific acceptance.
+`Experiments/exports/phase5_final.zip`. Their compact evidence, archive hashes,
+raw-row hashes, provenance, and negative interpretation are published under
+`results/phase5/`. Run the CPU-only tracked-evidence gate with:
+
+```powershell
+.\.venv\Scripts\python.exe scripts\verify_phase5_results.py
+```
+
+Expected output: `PHASE 5 RESULTS: PASS (complete negative availability result)`.
+Archive existence alone is not scientific acceptance.

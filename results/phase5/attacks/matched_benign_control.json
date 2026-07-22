@@ -1,0 +1,10 @@
+{
+  "absolute_nll_difference": 6.03802490234375,
+  "attack_nll": 15.065070152282715,
+  "attack_text": "uta sed pendontce counc frontsphia",
+  "control_nll": 9.027045249938965,
+  "control_official_index": null,
+  "control_source": "generated_neutral_token_cycle",
+  "control_text": " statement benign note context reference information statement benign",
+  "token_length": 8
+}

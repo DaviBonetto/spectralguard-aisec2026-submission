@@ -30,7 +30,11 @@ from src.experiments.phase3_common import (
     load_phase3_config,
     read_jsonl,
 )
-from src.experiments.phase3_dataset import load_frozen_dataset, materialize_dataset
+from src.experiments.phase3_dataset import (
+    load_frozen_dataset,
+    materialize_dataset,
+    snapshot_official_artifacts,
+)
 from src.experiments.phase3_modeling import (
     MambaSpectralCollector,
     evaluate_prompts_batch,
@@ -63,6 +67,10 @@ def _phase3_assets() -> tuple[dict[str, Any], Phase3Paths, list[dict[str, Any]]]
     paths = Phase3Paths.create(config)
     if not paths.child("datasets", "phase3_four_tasks.jsonl").is_file():
         materialize_dataset(config, paths)
+    if not paths.child(
+        "datasets", "official_hispa", "Mamba_triggers_scores.json"
+    ).is_file():
+        snapshot_official_artifacts(config, paths)
     return config, paths, load_frozen_dataset(paths)
 
 

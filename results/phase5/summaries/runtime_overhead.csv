@@ -1,0 +1,2 @@
+sessions,baseline_seconds_per_session,monitored_seconds_per_session,overhead_ratio,overhead_percent,peak_vram_gib
+60,0.024298068300004156,0.10412352363333262,4.285259319701344,328.5259319701344,13.183465957641602
