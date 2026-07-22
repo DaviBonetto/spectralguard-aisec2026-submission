@@ -10,7 +10,7 @@ weights, caches, credentials, and machine-local notebook state are excluded.
 
 ## Status
 
-Phases 0--5 are complete:
+Phases 0--6 are complete:
 the repository and environment are reproducible,
 the checkpoint foundations have been audited, and the theoretical claims have
 been repaired and independently verified. Phase 3 completed 18/18 preregistered
@@ -30,6 +30,13 @@ retains 100% malicious-session capture, but clean test-session survival rises
 only from 0/320 under Algorithm 2 to 8/320 (2.5%, bootstrap 95% CI
 [0.94%, 4.38%]) under Algorithm 2b. Monitoring adds 328.5% runtime overhead.
 The repository therefore makes no practical-availability claim.
+
+Phase 6 adds the submission-facing ethical analysis and responsible-release
+policy. It records the study's public-data, offline-only scope; identifies the
+affected stakeholders and dual-use risks; explains safeguards and the
+risk--benefit decision; states the IRB/ERB determination; and describes the
+artifact's actual MIT-licensed release without claiming an embargo or
+coordinated disclosure that did not occur.
 
 ## Repository layout and publication policy
 
@@ -241,3 +248,20 @@ raw-row hashes, provenance, and negative interpretation are published under
 
 Expected output: `PHASE 5 RESULTS: PASS (complete negative availability result)`.
 Archive existence alone is not scientific acceptance.
+
+## Phase 6 ethics and responsible release
+
+The paper's `Ethical Considerations` appendix follows the stakeholder-based
+analysis requested by the CCS 2026 ethics guidance and includes the dedicated
+`Responsible Disclosure and Release` subsection required by the project plan.
+The public vulnerability lineage, bounded offensive content, absence of live
+service testing, actual artifact contents, licensing, residual risk, and future
+operator-notification policy are stated explicitly.
+
+Run the deterministic compliance gate with:
+
+```powershell
+.\.venv\Scripts\python.exe scripts\verify_phase6_ethics.py
+```
+
+Expected output: `PHASE 6 ETHICS: PASS`.
