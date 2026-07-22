@@ -1,5 +1,6 @@
 \documentclass[sigconf]{acmart}
 \setlength{\emergencystretch}{1.5em}
+\graphicspath{{figures/}}
 
 % AISec 2026 follows the ACM CCS 2026 formatting instructions, except for
 % its 10-page body + 2-page appendix limit.  The CCS 2026 minimal sample
@@ -102,7 +103,40 @@ This paper makes five contributions:
   failure that aggregate F1 and AUC conceal.
 \end{itemize}
 
+Figure~\ref{fig:overview} summarizes the distinction that organizes the
+paper.  We ask four research questions: \textbf{RQ1}, what does spectral
+radius certify, and where does a radius-only monitor provably fail?
+\textbf{RQ2}, how much held-out detection signal do layer-wise spectral
+features provide relative to a representation-based comparator?
+\textbf{RQ3}, does that signal survive progressively stronger adaptive
+attackers while preserving task utility?  \textbf{RQ4}, can a frozen detector
+and response policy sustain benign multi-turn sessions at acceptable cost?
+Each question has a separate unit of analysis and acceptance criterion; no
+single aggregate score substitutes for the other three.
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\columnwidth]{evaluation_pipeline.pdf}
+  \caption{Evaluation boundary. SpectralGuard observes layer-wise transition
+  dynamics and produces a score, but a usable defense additionally requires
+  preserved attacked-task utility, robustness to detector-aware adaptation,
+  and benign-session availability. Our four research questions follow this
+  separation.}
+  \label{fig:overview}
+\end{figure}
+
 \section{Background and Related Work}
+
+Structured state-space sequence models derive efficient long-context
+computation from a recurrent state update. S4 made this construction practical
+through a structured and stably diagonalizable state matrix
+\cite{gu2022s4}. Mamba subsequently made the SSM parameters input-dependent,
+allowing the model to select what to propagate or forget while retaining
+linear sequence scaling \cite{gu2024mamba}. Mamba-2 relates selective SSMs to
+structured semiseparable matrices and refines the recurrent layer through
+state-space duality \cite{dao2024mamba2}. These architectures improve
+efficiency, but their persistent internal state also creates a security surface
+that is not captured by conventional visible-context inspection.
 
 Le Mercier, Develder, and Demeester introduced Hidden State Poisoning
 Attacks (HiSPAs), showing that short adversarial strings can corrupt the
@@ -126,7 +160,10 @@ to the authors' release nor that SpectralGuard is empirically superior.
 Adaptive evaluation must also test whether a defense relies on brittle or
 obfuscated gradients \cite{athalye2018obfuscated}. More broadly, security
 systems can impose operational costs that benchmark-level false-positive rates
-hide. Alahmadi et al. quantify the cost of false positives in network intrusion
+hide. Classifier scores also need not be calibrated probabilities
+\cite{guo2017calibration}; we therefore select response thresholds on validation
+data rather than interpret raw detector scores as confidence. Alahmadi et al.
+quantify the cost of false positives in network intrusion
 detection \cite{alahmadi2022falsepositives}, while Piet et al. evaluate SSH
 defenses at connection and deployment scales \cite{piet2023ssh}. We performed
 a dedicated search of work on hidden-state poisoning, adaptive detector
@@ -280,6 +317,20 @@ to unconditional completeness, not evidence that an arbitrary readout
 rotation is reachable from discrete tokens in the pinned checkpoint.  The
 latter remains an empirical question for the attack campaign.
 
+\begin{figure*}[t]
+  \centering
+  \includegraphics[width=\textwidth]{theory_counterexample.pdf}
+  \caption{Theory and boundary case (RQ1). \textbf{(a)} The exact frozen
+  diagonal certificate grows sharply only near $\rho=1$; it is an upper bound
+  on forgetting, not a lower bound on retained task information.
+  \textbf{(b)} Both constructed families erase the measured readout in all
+  1,000 systems, but the radius monitor detects every matched spectral collapse
+  and none of the directional-readout counterexamples (Wilson intervals shown).
+  This disproves unconditional completeness without asserting token-level
+  reachability.}
+  \label{fig:theory}
+\end{figure*}
+
 \section{SpectralGuard Defense}
 
 For every observed token and Mamba layer, SpectralGuard extracts the maximum
@@ -298,10 +349,24 @@ us distinguish representation quality, threshold calibration, and operational
 policy. It also prevents an availability improvement from being obtained by
 refitting the detector on held-out sessions.
 
+The 64-dimensional representation contains distributional summaries of the
+per-token layer trajectories, including location, spread, extrema, quantiles,
+and cross-layer aggregation. Features are computed before label access and the
+schema is frozen in the released configuration. Standardization parameters and
+logistic coefficients are estimated on calibration rows only. The validation
+threshold maximizes the prespecified detector objective subject to the frozen
+protocol; it is carried unchanged into all test, transfer, adaptive, and
+session-level cells. Thus later phases stress one fixed decision surface rather
+than quietly replacing a failed monitor.
+
 \section{Experimental Methodology}
 
 \paragraph{Data and splits.}
-The protocol covers associative recall, GSM8K, MMLU, and LongBench Qasper.
+The protocol covers associative recall, GSM8K, HumanEval, and LongBench
+Qasper. The seven unique checkpoints are Mamba-790M, Mamba-1.4B,
+Mamba-2.8B, Pythia-1.4B, Pythia-2.8B, GPT-2 XL, and Zamba2-2.7B; the latter
+three provide Transformer or hybrid controls rather than spectral-feature
+training targets.
 Prompt identifiers, task labels, and split assignments are frozen before
 fitting. The common detector comparison uses 1,200 calibration, 800
 validation, and 4,000 test rows: 1,000 held-out prompt clusters under clean,
@@ -309,6 +374,24 @@ HiSPA-original, gradient-guided, and adaptive-v2 conditions. No prompt cluster
 crosses split roles. The prescribed seeds are 42, 123, 456, 789, and 2026.
 The deterministic SpectralGuard fit is identical across those seed labels;
 the stochastic XGBoost comparator is refit at every seed.
+
+\begin{table}[t]
+\caption{Frozen evidence roles. Counts are rows in the common confirmatory
+detector protocol; session analyses reuse held-out prompt identities but change
+the unit of analysis to a three-turn session.}
+\label{tab:protocol}
+\centering
+\small
+\begin{tabular}{lrl}
+\toprule
+Role & Rows & Permitted use \\
+\midrule
+Calibration & 1,200 & Feature scaling and classifier fit \\
+Validation & 800 & Threshold, attack, and policy selection \\
+Test & 4,000 & One frozen confirmatory evaluation \\
+\bottomrule
+\end{tabular}
+\end{table}
 
 \paragraph{Attacks and controls.}
 We retain the published HiSPA trigger as a fixed reference and add
@@ -318,6 +401,15 @@ frozen before the test evaluation. A GPT-2 negative control tests for prompt
 length and likelihood artifacts. Phase~5 evaluates a separately constructed
 adversarial-benign trigger and a matched benign control without refitting the
 detector.
+
+The attack ladder intentionally changes attacker knowledge rather than only
+surface wording. Transfer attacks are optimized on a surrogate; query-only
+attacks receive bounded detector decisions; joint white-box attacks
+differentiate through task and detector losses. Restarts, candidate pools, and
+selection budgets are fixed before held-out scoring. The structural
+counterexample is kept separate because it answers an existence question in a
+controlled diagonal system, whereas the token attacks test reachability in
+learned checkpoints. Mixing those two evidentiary roles would overstate both.
 
 \paragraph{Compute and model provenance.}
 Every model load uses an immutable revision SHA, and each run records its seed,
@@ -348,6 +440,32 @@ classifier using only input length and prompt negative log-likelihood obtains
 AUC 0.533, below the preregistered 0.65 ceiling. This result removes the basis
 for the earlier categorical SSM-versus-Transformer claim; architecture-level
 conclusions are deferred to the complete analysis.
+
+Task utility is a limiting measurement axis rather than a hidden success
+criterion (Table~\ref{tab:task-utility}). Clean exact-match accuracy is low for
+three tasks, including zero restricted pass@1 on HumanEval. Qasper's token F1
+is nonzero despite near-zero exact match. We therefore interpret paired changes
+within a frozen task and prompt set, never compare raw scores across tasks, and
+do not turn floor-saturated attack cells into evidence of greater attack power.
+
+\begin{table}[t]
+\caption{Task-score coverage aggregated over the confirmatory matrix. Qasper
+uses token F1; the other tasks use exact code, numeric answer, or restricted
+pass@1. This table makes the low clean floors explicit.}
+\label{tab:task-utility}
+\centering
+\small
+\begin{tabular}{lrrrr}
+\toprule
+Task & $N_{clean}$ & Clean & $N_{v3}$ & Adaptive v3 \\
+\midrule
+Assoc. recall & 1,245 & .213 & 75 & .040 \\
+GSM8K & 925 & .013 & 75 & .027 \\
+HumanEval & 525 & .000 & 75 & .000 \\
+Qasper (token F1) & 605 & .099 & 75 & .089 \\
+\bottomrule
+\end{tabular}
+\end{table}
 
 Under one calibration/validation/test protocol, the multilayer SpectralGuard
 detector obtains F1 0.806 and AUC 0.887 (Table~\ref{tab:detectors}). The same
@@ -412,6 +530,36 @@ prespecified worst-case endpoint. These values show degradation under stronger
 attacker knowledge, while remaining detector metrics rather than guarantees of
 preserved task utility.
 
+Attack success has an additional denominator constraint. Only 13/300 prompts
+in each Phase~4 cell are clean-correct, so conditional success is 13/13 for
+transfer and query-only and 11/13 for joint white-box, but absolute success is
+4.33\%, 4.33\%, and 3.67\% over all 300 prompts. We report the conditional and
+absolute denominators together. The conditional values characterize failures
+among initially solvable prompts; they do not support a population-wide attack
+rate when clean coverage is 4.33\%.
+
+Figure~\ref{fig:detection} places the three inferentially distinct findings
+side by side. SpectralGuard's cluster-bootstrap interval and the comparator's
+five stochastic refits are deliberately shown with different marks: the former
+captures prompt-sampling uncertainty on one fixed test set, while the latter
+captures training-seed variation on that same split. Detector quality then
+degrades monotonically as attacker access increases. Yet attacked-task
+accuracy is already at the floor, so the small paired difference between v2
+and v3 cannot be interpreted as a security improvement.
+
+\begin{figure*}[t]
+  \centering
+  \includegraphics[width=\textwidth]{detection_adaptation.pdf}
+  \caption{Detection and adaptation (RQ2--RQ3). \textbf{(a)} Nonexchangeable
+  uncertainty sources are not presented as equivalent error bars: SpectralGuard
+  shows a fixed-test prompt-cluster bootstrap interval; the CLASP-style marks
+  are five training-seed fits on the same split. \textbf{(b)} Frozen-detector
+  F1 and AUC decline under transfer, query-only, and joint white-box attackers.
+  \textbf{(c)} Detector-aware v3 does not restore task utility relative to v2;
+  both accuracies are floor-saturated.}
+  \label{fig:detection}
+\end{figure*}
+
 \section{Adaptive Threat Model}
 
 We consider four attacker knowledge levels. The reference attacker knows the
@@ -463,6 +611,72 @@ Graduated (Alg.~2b) & 8/320 (2.5\%) & 320/320 (100\%) \\
 \end{tabular}
 \end{table}
 
+Figure~\ref{fig:availability} exposes why per-window detector metrics are an
+insufficient deployment endpoint. The graduated policy reduces the fraction of
+blocked clean windows by 25.50 percentage points relative to fail closed, but
+overlapping alerts across turns still terminate 97.5\% of clean sessions. The
+matched benign and adversarial-benign conditions both have zero survival,
+showing that the response layer has not learned a usable semantic boundary.
+The 4.29$\times$ latency ratio is measured end to end on the same 60 validation
+sessions; it is a system cost, not a GPU-throughput extrapolation.
+
+\begin{figure*}[t]
+  \centering
+  \includegraphics[width=\textwidth]{availability_cost.pdf}
+  \caption{Availability and cost (RQ4). \textbf{(a)} The fail-closed policy
+  permits no held-out session to survive; graduation admits only 8/320 clean
+  sessions and none in the other conditions (95\% intervals shown).
+  \textbf{(b)} Window-level blocking remains saturated despite graduation.
+  \textbf{(c)} Monitoring increases measured end-to-end session latency from
+  0.0243 to 0.1041 seconds. High malicious blocking therefore coexists with
+  unacceptable benign availability and cost.}
+  \label{fig:availability}
+\end{figure*}
+
+\section{Discussion}
+
+\paragraph{A hierarchy of evidence.}
+The study supports four claims of decreasing scope. First, the frozen diagonal
+calculation is an exact mathematical certificate of forgetting. Second, the
+counterexample establishes that radius-only detection is incomplete outside a
+declared coverage condition. Third, held-out experiments show that richer
+spectral summaries contain predictive attack signal. Fourth, the bounded
+adaptive and session experiments show that this signal is not sufficient for
+a robust, usable response policy. None of the empirical layers upgrades the
+preceding theorem into a universal claim, and none of the detector metrics
+overrides observed task or availability failure.
+
+\paragraph{Why a weaker detector result is still informative.}
+The common-protocol comparison rejects the strongest version of our initial
+hypothesis: spectral summaries are not the best tested representation for
+detecting these attacks. That negative result narrows the design space. Block
+output embeddings retain directions and interactions that scalar transition
+magnitudes discard, consistent with the constructive readout counterexample.
+At the same time, the comparator result is internal: it uses a faithful design
+reimplementation, not official released weights, and it shares our frozen
+split. The defensible conclusion is therefore representational---radius and
+its summaries omit relevant geometry---rather than a leaderboard claim about
+all implementations.
+
+\paragraph{Implications for defense design.}
+A successor should combine transition dynamics with directional state or
+readout information, calibrate uncertainty on benign multi-turn traffic, and
+optimize the response policy jointly for security and availability. Selective
+abstention or deferred review may be preferable to hard blocking when the
+detector is poorly calibrated. Most importantly, evaluation should declare a
+utility floor and an availability budget before attack selection. Otherwise a
+detector can appear robust precisely when the victim task and benign service
+are already unusable.
+
+\paragraph{Reproducibility as a result constraint.}
+Every number in the manuscript maps to compact tracked evidence with frozen
+split roles, hashes, seeds, and model revisions. Checkpointed GPU stages can be
+resumed without recomputing completed rows, while final summaries are rebuilt
+on CPU. This discipline was not merely operational: it exposed duplicated
+deterministic seed labels, a template artifact in the negative control, and
+the difference between prompt-level and session-level uncertainty before those
+could become claims.
+
 \section{Limitations}
 
 The forgetting theorem is exact only for a frozen diagonal transition.  The
@@ -484,6 +698,16 @@ marginally and does not distinguish the crafted benign condition from its
 matched control.  Deployment therefore requires recalibration on a disjoint
 session distribution or a different decision statistic; neither is evaluated
 post hoc here.
+
+The seven evaluated checkpoints do not cover all selective SSMs, hybrid
+architectures, quantization regimes, context lengths, or serving stacks.
+Exact-answer task scores are conservative and several attacked cells are
+floor-saturated. Bootstrap intervals quantify sampling variation for the
+frozen prompt pool, not distribution shift. Query and optimization budgets
+bound the tested adversary; larger budgets could worsen results. Finally,
+synthetic three-turn sessions cannot estimate a production false-block rate.
+They function as a controlled stress test that reveals failure, not as a
+deployment forecast.
 
 \section{Conclusion}
 Spectral monitoring is informative, but detection is not defense. For frozen

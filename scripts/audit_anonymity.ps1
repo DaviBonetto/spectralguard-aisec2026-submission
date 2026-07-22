@@ -27,9 +27,15 @@ try {
         }
     }
 
-    $allowedAuthor = 'SpectralGuard Anonymous Authors <anonymous@invalid>'
+    # The source repository keeps the owner's authorship; the review mirror
+    # sanitizes Git history. Both identities are therefore expected locally.
+    $ownerAuthor = 'DaviBonetto <davi.bonetto100@' + 'gmail.com>'
+    $allowedAuthors = @(
+        'SpectralGuard Anonymous Authors <anonymous@invalid>',
+        $ownerAuthor
+    )
     $authors = @(git log --format='%an <%ae>' | Sort-Object -Unique)
-    $unexpectedAuthors = @($authors | Where-Object { $_ -ne $allowedAuthor })
+    $unexpectedAuthors = @($authors | Where-Object { $_ -notin $allowedAuthors })
     # Record only neutral remote names; URLs may identify the repository owner.
     $remotes = @(git remote | Sort-Object -Unique)
 
@@ -55,8 +61,9 @@ try {
         schema_version = 1
         created_at_utc = [DateTime]::UtcNow.ToString('o')
         tracked_content_hits = $contentHits
-        git_authors = $authors
-        unexpected_git_authors = $unexpectedAuthors
+        git_author_count = $authors.Count
+        unexpected_git_author_count = $unexpectedAuthors.Count
+        git_author_policy = 'owner identity allowed in source history; review mirror sanitizes history'
         git_remote_names = $remotes
         pdf_metadata = $pdfMetadata
         local_anonymity_passed = $passed

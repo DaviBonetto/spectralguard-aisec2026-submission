@@ -69,7 +69,8 @@ def main() -> None:
     assert "@article{bailey2012menlo" in bib
     assert "doi     = {10.1109/MSP.2012.52}" in bib
     assert "Phase 6 ethics and responsible release" in readme
-    assert "Phases 0--6 are complete" in readme
+    completed = re.search(r"Phases 0--(\d+) are complete", readme)
+    assert completed and int(completed.group(1)) >= 6
 
     print(f"PHASE 6 ETHICS: PASS ({len(words)} words; ACM fields retained)")
 

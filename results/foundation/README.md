@@ -10,5 +10,6 @@ This directory contains machine-generated, lightweight evidence only:
 - `anonymous_repository_audit.json` is produced by `scripts/audit_anonymous_repository.py` and checks the public review mirror for required files, planning-material leakage, and identity terms.
 - `anonymous_quickstart_reproduction.json` records a clean download, locked environment creation, and independent execution of the published Phase 1 quickstart.
 - `docker_validation.json` records an observed build identifier, the pinned base-image digest, and the containerized test result. The image identifier is informational because BuildKit manifest metadata may vary across rebuilds.
+- `phase8_figure_manifest.json` binds the four publication vector PDFs to the exact tracked input files and SHA-256 hashes used to generate them.
 
 No historical headline metric is imported into this directory.

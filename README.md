@@ -10,7 +10,7 @@ weights, caches, credentials, and machine-local notebook state are excluded.
 
 ## Status
 
-Phases 0--6 are complete, and Phase 7 scientific positioning is complete:
+Phases 0--8 are complete:
 the repository and environment are reproducible,
 the checkpoint foundations have been audited, and the theoretical claims have
 been repaired and independently verified. Phase 3 completed 18/18 preregistered
@@ -46,6 +46,16 @@ primary-source literature audit. The manuscript makes no detector-superiority,
 production-readiness, or general priority claim. Raw research archives are
 stored physically outside the repository rather than merely ignored.
 
+Phase 8 turns that evidence into a publication-ready nine-page ACM manuscript
+with four data-derived vector figures, four explicit research questions, a
+frozen protocol table, task-floor disclosure, adaptive-attack denominator
+audit, and a dedicated discussion. The paper uses eight body pages plus the
+combined references/appendix material, remaining below the 10+2 AISec ceiling
+without padding to the maximum. A tracked figure manifest binds every plotted
+panel to source files and SHA-256 hashes. The manuscript gate checks vector-only
+artwork, citations, anonymity, portable paths, claim language, and page-budget
+compatibility.
+
 ## Repository layout and publication policy
 
 - `configs/` contains versioned protocols only; `foundation_audit.yaml`
@@ -58,8 +68,8 @@ stored physically outside the repository rather than merely ignored.
 - `results/` contains lightweight evidence with a README and provenance record
   for each completed campaign; raw JSONL, checkpoints, weights, and caches stay
   under the ignored `Experiments/` runtime.
-- `paper/` contains only the ACM source and bibliography. Generated build files
-  and the PDF are ignored.
+- `paper/` contains the ACM source, bibliography, and four reproducible vector
+  figures. Transient build files and the compiled PDF are ignored.
 - `tests/`, `docker/`, `pyproject.toml`, `uv.lock`, and the two requirements
   files provide the local, container, locked-development, and Lightning gates.
 
@@ -273,3 +283,20 @@ Run the deterministic compliance gate with:
 ```
 
 Expected output: `PHASE 6 ETHICS: PASS`.
+
+## Phase 7--8 manuscript and figures
+
+Phase 7 freezes the evidence-backed position and Phase 8 performs the final
+scientific expansion and visual synthesis. Regenerate all publication figures,
+compile the ACM manuscript, and run its semantic gate with:
+
+```powershell
+.\.venv\Scripts\python.exe scripts\build_phase8_figures.py
+.\scripts\build_paper.ps1
+.\.venv\Scripts\python.exe scripts\verify_phase8_manuscript.py
+```
+
+Expected output includes `PHASE 8 FIGURES: PASS` and
+`PHASE 8 MANUSCRIPT: PASS`. The figure builder uses a colorblind-safe palette,
+emits vector PDFs only, and records both figure and input hashes in
+`results/foundation/phase8_figure_manifest.json`.
