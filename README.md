@@ -1,302 +1,81 @@
 # SpectralGuard
 
-Research artifact for evaluating spectral monitoring against hidden-state poisoning attacks in state-space language models.
+Detection Is Not Defense: A DURA Evaluation of Spectral Monitoring for Hidden-State Poisoning.
 
-Anonymous review mirror: https://anonymous.4open.science/r/spectralguardaisec26/
+SpectralGuard is an auditable research artifact accompanying a double-blind submission on evaluating spectral state-space monitoring for hidden-state poisoning in state-space language models (SSMs). Hidden-state poisoning uses adversarial text to alter persistent recurrent state and affect later task behavior. To evaluate defensive claims systematically, this artifact implements the **DURA** framework—evaluating **D**etection, **U**tility, **R**obustness, and **A**vailability. The central conclusion of this work is deliberately cautious: a positive spectral detection signal does not establish a usable or available defensive mechanism under adaptive threat models.
 
-This repository is being prepared for anonymous review. Reproduction commands
-and lightweight, verified evidence are released phase by phase; raw model
-weights, caches, credentials, and machine-local notebook state are excluded.
+## Key findings
 
-## Status
+- **Detection Signal:** SpectralGuard achieves an F1 score of 0.806 and ROC-AUC of 0.887 on state-space poison detection across four benchmark tasks.
+- **Representation Comparator:** Under the shared protocol, a CLASP-style BOE+XGBoost representation comparator reaches mean F1 0.969 and ROC-AUC 0.997, outperforming the spectral representation on the same held-out rows.
+- **Joint White-Box Adaptive Robustness:** Under joint white-box evaluation, SpectralGuard falls to F1 0.746. On the adaptive task set, accuracy is 5/300 (1.67%), with only 13/300 prompts clean-correct before attack.
+- **Graduated Defense Availability:** Graduated mitigation policy preserves session survival for only 8/320 clean sessions, while incurring a 4.29× measured end-to-end latency multiplier.
 
-Phases 0--8 are complete:
-the repository and environment are reproducible,
-the checkpoint foundations have been audited, and the theoretical claims have
-been repaired and independently verified. Phase 3 completed 18/18 preregistered
-acceptance items over 19,300 confirmatory rows, with immutable archive hashes,
-leakage-controlled splits, uncertainty estimates, and an independent
-adversarial audit. The evidence does not support a superiority claim over the
-CLASP-style comparator, and the repository reports that result explicitly.
+*Note:* In the adaptive evaluation dataset, only 13/300 prompts were clean-correct prior to attack, reflecting severe task-coverage bounds. This artifact makes no claim of production readiness or certified robustness.
 
-Phase 4 completed the frozen 1,200-row adaptive matrix, all nine white-box
-lambda/seed cells, and the preregistered query-only comparison. Its semantic
-gate passes, but only 13/300 clean prompts were eligible for conditional ASR;
-the tracked report therefore treats low coverage as a primary limitation.
+## Artifact contents
 
-Phase 5 completed 1,520 session-condition traces and 900 held-out prompt
-evaluations. Its result is negative: the validation-selected graduated policy
-retains 100% malicious-session capture, but clean test-session survival rises
-only from 0/320 under Algorithm 2 to 8/320 (2.5%, bootstrap 95% CI
-[0.94%, 4.38%]) under Algorithm 2b. Monitoring adds 328.5% runtime overhead.
-The repository therefore makes no practical-availability claim.
+- `src/`: Core Python implementations of detectors, attacks, defenses, evaluation pipelines, and provenance tracking.
+- `configs/`: Frozen YAML protocol definitions, dataset splits, model revisions, and seed specifications.
+- `results/`: Compact serialized evidence, manifests, and summaries for all reported figures and tables.
+- `scripts/`: Deterministic CPU-only verification, audit, and vector-figure rendering scripts.
+- `notebooks/`: Output-free Jupyter entry points for end-to-end experimental reproduction.
+- `paper/`: Complete ACM LaTeX manuscript source (`main.tex`), bibliography (`references.bib`), and vector figures.
+- `tests/`: Automated test suite covering protocol integrity, claims, and anonymity invariants.
 
-Phase 6 adds the submission-facing ethical analysis and responsible-release
-policy. It records the study's public-data, offline-only scope; identifies the
-affected stakeholders and dual-use risks; explains safeguards and the
-risk--benefit decision; states the IRB/ERB determination; and describes the
-artifact's actual MIT-licensed release without claiming an embargo or
-coordinated disclosure that did not occur.
+## Quickstart
 
-Phase 7 freezes the submission title, abstract, contribution boundary, and
-complete manuscript. It adds a 2,000-resample prompt-cluster bootstrap for the
-deterministic SpectralGuard result, labels the CLASP-style interval separately
-as seed-to-seed training variation on one shared split, and records a dedicated
-primary-source literature audit. The manuscript makes no detector-superiority,
-production-readiness, or general priority claim. Raw research archives are
-stored physically outside the repository rather than merely ignored.
-
-Phase 8 turns that evidence into a publication-ready nine-page ACM manuscript
-with four data-derived vector figures, four explicit research questions, a
-frozen protocol table, task-floor disclosure, adaptive-attack denominator
-audit, and a dedicated discussion. The paper uses eight body pages plus the
-combined references/appendix material, remaining below the 10+2 AISec ceiling
-without padding to the maximum. A tracked figure manifest binds every plotted
-panel to source files and SHA-256 hashes. The manuscript gate checks vector-only
-artwork, citations, anonymity, portable paths, claim language, and page-budget
-compatibility.
-
-## Repository layout and publication policy
-
-- `configs/` contains versioned protocols only; `foundation_audit.yaml`
-  records the audited sources, anonymous mirror, and foundation output.
-- `notebooks/` contains five output-free, sequential `Run all` entry points.
-- `src/` contains importable attack, defense, evaluation, experiment, and
-  provenance modules; empty placeholder packages are not published.
-- `scripts/` contains command-line audit, build, restore, and verification
-  entry points referenced by this README or the notebooks.
-- `results/` contains lightweight evidence with a README and provenance record
-  for each completed campaign; raw JSONL, checkpoints, weights, and caches stay
-  under the ignored `Experiments/` runtime.
-- `paper/` contains the ACM source, bibliography, and four reproducible vector
-  figures. Transient build files and the compiled PDF are ignored.
-- `tests/`, `docker/`, `pyproject.toml`, `uv.lock`, and the two requirements
-  files provide the local, container, locked-development, and Lightning gates.
-
-Root metadata is limited to the license, anonymous citation metadata, package
-configuration, dependency locks, ignore policy, and this documentation. Files
-without a reproducibility, evidence, submission, or verification purpose are
-not tracked.
-
-## Phase 1 quickstart
-
-The current reproducible foundation result is the resolution of the legacy condition-number contradiction. It is a structural checkpoint audit, not a defense-effectiveness result:
-
-```powershell
-uv sync --locked
-.\.venv\Scripts\python.exe -m src.utils.measure_mamba_kappa --model-id state-spaces/mamba-130m-hf --revision 1e76775f628fbf1350fbe4dbb3d971ba64af25a1 --output results\foundation\mamba_130m_kappa.json
-.\.venv\Scripts\python.exe scripts\verify_foundation_result.py
-```
-
-Expected output: `PASS: kappa_2(V)=1.0 for all 24 layers at the pinned revision.`
-
-## Reproducibility policy
-
-Exact dependencies are recorded in `requirements.txt` and `uv.lock`. The initial seed, determinism, result-provenance, and model-revision requirements are defined in `configs/reproducibility.yaml`. Every experiment added after Phase 0 must reference a config and write its seed, package versions, model identifier, and immutable model revision into its result record.
-
-Phase 1 audit commands:
-
-```powershell
-.\.venv\Scripts\python.exe scripts\audit_references.py --tex paper\main.tex --bib paper\references.bib --output results\foundation\reference_audit.json
-.\.venv\Scripts\python.exe scripts\audit_clasp_artifact.py --output results\foundation\clasp_artifact_audit.json
-.\.venv\Scripts\python.exe scripts\audit_anonymous_repository.py --repo-id spectralguardaisec26 --output results\foundation\anonymous_repository_audit.json
-.\.venv\Scripts\python.exe -m src.utils.measure_mamba_kappa --model-id state-spaces/mamba-130m-hf --revision 1e76775f628fbf1350fbe4dbb3d971ba64af25a1 --output results\foundation\mamba_130m_kappa.json
-.\.venv\Scripts\python.exe scripts\verify_foundation_result.py
-.\.venv\Scripts\python.exe -m pytest -q
-.\scripts\audit_anonymity.ps1
-.\scripts\build_paper.ps1
-```
-
-The complete local gate, including a clean Docker build and containerized tests, is:
-
-```powershell
-.\scripts\verify_phase1.ps1
-```
-
-The legacy-reference inventory is generated from the official `2603.12414v1` arXiv source by passing its extracted `main.tex` to `scripts/audit_legacy_tex.py`; the historical source itself is intentionally not copied into this anonymous repository.
-
-The generated evidence is documented in `results/foundation/README.md`. The Docker image runs the test suite by default.
-
-Phase 2 deterministic theory audit:
-
-```powershell
-.\.venv\Scripts\python.exe -m src.eval.phase2_theory_audit --config configs\phase2_theory.yaml
-.\.venv\Scripts\python.exe -m src.attacks.directional_counterexample --config configs\phase2_directional.yaml
-```
-
-The second command is a seeded, model-level counterexample to unconditional
-radius-monitor completeness. It does not claim that the constructed readout
-rotation is reachable from discrete tokens in the pinned checkpoint. Generated
-evidence and its exact scope are documented in `results/theory/README.md`.
-
-Run the complete Phase 2 gate (regeneration, lint, tests, paper build,
-evidence checks, and anonymity audit) with:
-
-```powershell
-.\scripts\verify_phase2.ps1
-```
-
-## Phase 3 Lightning AI protocol
-
-Phase 3 used exactly two clean notebooks and a Git-ignored runtime directory:
-
-1. `notebooks/01_phase3_experiments.ipynb` is a single `Run all` H100 workflow.
-   It verifies the exact Python 3.12/Torch 2.8/CUDA 12 environment, installs
-   hash-pinned official Mamba CUDA wheels, executes a fused-kernel smoke test,
-   audits all 1,500 prompt boundaries, proves batch-one/batched equivalence for
-   restored evidence, and resumes atomic checkpoints under a three-hour
-   session timebox plus an 8.25 GPU-hour cumulative research guard. Recurrent
-   Mamba/hybrid batches contain only exactly equal token lengths. Transformer
-   batches are length-sorted and attention-masked to reduce padding without
-   changing outputs; CUDA OOMs halve only the affected batch.
-2. `notebooks/02_phase3_analysis.ipynb` applies the frozen split policy
-   (calibration for fitting, validation for threshold selection, test for final
-   reporting), computes uncertainty, and creates the final archive with one
-   CPU `Run all`.
-
-Before using Lightning credits, run the CPU-only local gate:
-
-```powershell
-.\scripts\verify_phase3_preflight.ps1
-```
-
-For a resumed run, clone and install the repository on CPU, upload exactly one
-cumulative `phase3_handoff.tar.gz`, restore it with its audited SHA-256, and run
-the CPU resume verifier. Do not enable the H100 until the verifier prints
-`PHASE 3 RESUME VERIFICATION: READY FOR H100`:
+Verify the primary DURA evaluation results using lightweight, CPU-only verification scripts:
 
 ```bash
-python scripts/restore_phase3_handoff.py phase3_handoff.tar.gz --sha256 <sha256> && \
-python scripts/verify_phase3_resume.py --expected-sha256 <sha256> --expected-e01-rows <rows>
+uv sync --locked
+uv run python scripts/verify_phase3_results.py
+uv run python scripts/verify_phase4_results.py
+uv run python scripts/verify_phase5_results.py
 ```
 
-After enabling the H100, Notebook 1 installs and validates the frozen CUDA
-extensions before resuming. Notebook 2 should be run on CPU to avoid cost, but
-does not impose a hardware lock.
+Expected output:
 
-The two downloadable outputs are written to
-`Experiments/exports/phase3_experiments.zip` and
-`Experiments/exports/phase3_final.zip`. Model weights, credentials, notebook
-outputs, and partial caches are never included. The completed campaign contains
-19,300 confirmatory rows across E01--E08. Its lightweight tables, acceptance
-matrix, Pareto figure, archive hashes, and scope-qualified interpretation are
-published under `results/phase3/`; raw outputs remain external to Git.
-
-Verify the tracked Phase 3 evidence without a GPU:
-
-```powershell
-.\.venv\Scripts\python.exe scripts\verify_phase3_results.py
+```text
+PHASE 3 TRACKED EVIDENCE: PASS (18/18 semantic gates)
+PHASE 4 RESULTS: PASS
+PHASE 5 RESULTS: PASS (complete negative availability result)
 ```
 
-## Phase 4 Lightning AI protocol
+## Reproducing the claims
 
-Phase 4 adds two clean `Run all` notebooks. Notebook 03 performs genuine
-query-only target refinement and a joint white-box HotFlip attack against the
-pinned Mamba-2.8B model and the frozen Phase 3 SpectralGuard detector. It uses
-the same 300 frozen test prompt IDs for clean, zero-query transfer, query-only,
-and joint white-box conditions. Hyperparameters are selected on validation;
-test is evaluated once. The primary attack outcome is conditional ASR among
-clean-correct prompts, accompanied by coverage and absolute ASR.
+The table below maps each DURA evaluation axis to its underlying evidence bundle and corresponding verification command:
 
-The paid H100 session is capped at 2.4 hours with a five-minute atomic-export
-reserve. Completed attack restarts and prompt-condition pairs are resumable.
-Notebook 04 computes statistics and creates the final ZIP entirely on CPU.
-Every code cell prints `Finished` only after its assertions pass.
+| DURA Axis | Evidence Location | Verification Command |
+| :--- | :--- | :--- |
+| **Theory** | `results/theory/` | `uv run python -m pytest tests/test_phase2_theory.py` |
+| **Detection & Utility** | `results/phase3/` | `uv run python scripts/verify_phase3_results.py` |
+| **Adaptive Robustness** | `results/phase4/` | `uv run python scripts/verify_phase4_results.py` |
+| **Availability** | `results/phase5/` | `uv run python scripts/verify_phase5_results.py` |
+| **Manuscript & Figures** | `paper/` & `results/foundation/` | `uv run python scripts/verify_phase8_manuscript.py` |
 
-Before spending GPU credits, run:
+The CPU-only commands above re-verify all published evidence manifests and statistical summaries deterministically within seconds. Full GPU-based end-to-end model re-execution is supported via `notebooks/` using pinned public HuggingFace model revisions.
 
-```powershell
-.\scripts\verify_phase4_preflight.ps1
+## Reproducibility
+
+To ensure rigorous scientific reproducibility, all experimental protocols rely on immutable model revisions, frozen dataset splits, serialized detector checkpoints, and validation-only threshold selection. Random seeds are explicitly pinned across multi-seed runs. Vector figures (`paper/figures/`) are generated deterministically from serialized summary data via `scripts/build_phase8_figures.py`.
+
+## Limitations and responsible use
+
+This work evaluates spectral monitoring under controlled synthetic session distributions with low clean-task coverage and bounded adaptive search budgets. The findings do not imply production readiness or complete defensive coverage. Attack implementations are provided strictly to enable auditability and defensive reproduction. See Appendix E (*Ethical Considerations*) of the manuscript for the full responsible release rationale.
+
+## Citation
+
+During double-blind peer review, please cite this anonymous artifact as follows:
+
+```bibtex
+@software{spectralguard2026,
+  author = {{Anonymous Authors}},
+  title = {Detection Is Not Defense: A DURA Evaluation of Spectral Monitoring for Hidden-State Poisoning},
+  year = {2026},
+  note = {Anonymous research artifact},
+  url = {https://anonymous.4open.science/r/spectralguardaisec26/}
+}
 ```
 
-The downloadable outputs are `Experiments/exports/phase4_experiments.zip` and
-`Experiments/exports/phase4_final.zip`; a timed session instead produces
-`Experiments/exports/phase4_handoff.tar.gz`.
-
-The completed lightweight evidence, strengthened CPU analysis, archive
-provenance, and explicit low-coverage limitation are published under
-`results/phase4/`.
-
-## Phase 5 Lightning AI protocol
-
-Phase 5 is the fifth and final experiment notebook. It measures the defense as
-an availability attack surface rather than treating per-token false-positive
-rate as a sufficient safety claim. `notebooks/05_phase5_availability.ipynb`
-builds 60 validation and 320 held-out test sessions with three turns each,
-collects causal 32-token spectral windows, and compares the original
-single-alert hard block (Algorithm 2) with a graduated `k`-of-`w` policy
-(Algorithm 2b: `PASS`, `FLAG-CONTINUE`, `HARD-BLOCK`).
-
-Policy selection additionally replays the validation-selected Phase 4
-white-box trigger. Thus a lower false-block rate is accepted only when
-malicious-session capture remains within the frozen five-point tolerance.
-
-The `k,w` pair is selected only on validation. It may improve benign session
-survival only while retaining attack capture within the frozen five-point
-tolerance; otherwise the analysis publishes a negative result. The completed
-campaign selected `k=4,w=4` and produced exactly that negative outcome: clean
-test-session survival was 2.5%, while the matched benign control,
-adversarial-benign condition, and malicious white-box condition all had 0%
-session survival. A separate
-five-seed white-box adversarial-benign optimizer attempts to trigger the
-detector while preserving benign task score, with 300 held-out prompts and a
-matched benign control. The frozen Phase 3 detector is never refit.
-
-The single notebook installs and validates the exact CUDA kernels, runs the
-H100 experiment, performs leakage-safe analysis, enforces semantic acceptance,
-and emits both final archives. Every cell prints `Finished` only after its
-assertions pass. The paid session has a 2.7-hour ceiling and eight-minute atomic
-export reserve; completed attack seeds, session-condition traces, and prompt
-scores are resumable through `phase5_handoff.tar.gz`.
-
-Before spending GPU credits, run:
-
-```powershell
-.\scripts\verify_phase5_preflight.ps1
-```
-
-The downloadable outputs are `Experiments/exports/phase5_experiments.zip` and
-`Experiments/exports/phase5_final.zip`. Their compact evidence, archive hashes,
-raw-row hashes, provenance, and negative interpretation are published under
-`results/phase5/`. Run the CPU-only tracked-evidence gate with:
-
-```powershell
-.\.venv\Scripts\python.exe scripts\verify_phase5_results.py
-```
-
-Expected output: `PHASE 5 RESULTS: PASS (complete negative availability result)`.
-Archive existence alone is not scientific acceptance.
-
-## Phase 6 ethics and responsible release
-
-The paper's `Ethical Considerations` appendix follows the stakeholder-based
-analysis requested by the CCS 2026 ethics guidance and includes the dedicated
-`Responsible Disclosure and Release` subsection required by the project plan.
-The public vulnerability lineage, bounded offensive content, absence of live
-service testing, actual artifact contents, licensing, residual risk, and future
-operator-notification policy are stated explicitly.
-
-Run the deterministic compliance gate with:
-
-```powershell
-.\.venv\Scripts\python.exe scripts\verify_phase6_ethics.py
-```
-
-Expected output: `PHASE 6 ETHICS: PASS`.
-
-## Phase 7--8 manuscript and figures
-
-Phase 7 freezes the evidence-backed position and Phase 8 performs the final
-scientific expansion and visual synthesis. Regenerate all publication figures,
-compile the ACM manuscript, and run its semantic gate with:
-
-```powershell
-.\.venv\Scripts\python.exe scripts\build_phase8_figures.py
-.\scripts\build_paper.ps1
-.\.venv\Scripts\python.exe scripts\verify_phase8_manuscript.py
-```
-
-Expected output includes `PHASE 8 FIGURES: PASS` and
-`PHASE 8 MANUSCRIPT: PASS`. The figure builder uses a colorblind-safe palette,
-emits vector PDFs only, and records both figure and input hashes in
-`results/foundation/phase8_figure_manifest.json`.
+Machine-readable citation metadata is provided in `CITATION.cff`. Code is released under the MIT License; see `LICENSE` and `MODEL_LICENSES.md` for upstream model terms.

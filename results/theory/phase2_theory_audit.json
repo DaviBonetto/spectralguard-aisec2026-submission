@@ -4,7 +4,7 @@
   "config_path": "configs/phase2_theory.yaml",
   "config_sha256": "8746e48d0edd80fc746578c9ef201b397080575967fc00956300c1faf5d64482",
   "foundation_measurement": "results/foundation/mamba_130m_kappa.json",
-  "foundation_measurement_sha256": "474437f75485b7cd19136159a049eb32100fcd0ab1184cd5b119a782a30bbd5b",
+  "foundation_measurement_sha256": "4d085e3e4adcc882a319a639f9c582335919b7bb13a89d11d753be609ba5bfa9",
   "global_A_operator_norm_2_max": 283589262.6031651,
   "layer_A_operator_norm_2": [
     {

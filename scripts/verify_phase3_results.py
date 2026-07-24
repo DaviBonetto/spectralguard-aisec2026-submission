@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 
 import pandas as pd
@@ -20,6 +21,44 @@ def _csv(name: str) -> pd.DataFrame:
     if frame.empty:
         raise ValueError(f"empty Phase 3 table: {path}")
     return frame
+
+
+def _build_denylist() -> tuple[str, ...]:
+    """Return tokens that must not appear in tracked result files.
+
+    Generic machine-path patterns are always included.  Private terms
+    (e.g., author names) are loaded exclusively from a local, git-ignored
+    source so they never exist as literals in the published repository:
+
+    - Environment variable SPECTRALGUARD_PRIVATE_DENYLIST (colon-separated)
+    - File .spectralguard_denylist at the repository root (one term per line)
+
+    Both sources are optional; absence is not an error.
+    """
+    tokens: list[str] = [
+        # Generic absolute-path prefixes — cannot reveal specific identity
+        "C:" + "\\Users\\",
+        "/team" + "space/",
+        # Generic email / URL patterns
+        "@" + "gmail.com",
+        "@" + "hotmail.com",
+        "github.com/",
+    ]
+
+    # Load private terms from environment variable (colon-separated)
+    env_val = os.environ.get("SPECTRALGUARD_PRIVATE_DENYLIST", "")
+    if env_val.strip():
+        tokens.extend(t.strip() for t in env_val.split(":") if t.strip())
+
+    # Load private terms from local untracked file
+    denylist_file = ROOT / ".spectralguard_denylist"
+    if denylist_file.is_file():
+        for line in denylist_file.read_text(encoding="utf-8").splitlines():
+            line = line.strip()
+            if line and not line.startswith("#"):
+                tokens.append(line)
+
+    return tuple(tokens)
 
 
 def verify() -> None:
@@ -69,14 +108,7 @@ def verify() -> None:
     if not figure.read_bytes().startswith(b"%PDF"):
         raise ValueError("Pareto PDF is absent or invalid")
 
-    # Compose local-only markers so this public verifier does not contain the
-    # same identifying literals that the repository-wide anonymity gate bans.
-    forbidden = (
-        "C:" + "\\Users\\",
-        "/team" + "space/",
-        "Davi" + "Bonetto",
-        "@" + "gmail.com",
-    )
+    forbidden = _build_denylist()
     for path in RESULTS.rglob("*"):
         if path.is_file() and path.suffix.lower() in {".csv", ".json", ".md", ".txt"}:
             text = path.read_text(encoding="utf-8")

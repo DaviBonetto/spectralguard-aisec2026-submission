@@ -1,9 +1,16 @@
 cff-version: 1.2.0
-message: "If you use this software, please cite the associated SpectralGuard paper."
-title: "SpectralGuard"
+message: "If you use this software, please cite the anonymous SpectralGuard artifact."
+title: "Detection Is Not Defense: A DURA Evaluation of Spectral Monitoring for Hidden-State Poisoning"
 type: software
 authors:
   - family-names: "Authors"
     given-names: "Anonymous"
 license: MIT
 url: "https://anonymous.4open.science/r/spectralguardaisec26/"
+preferred-citation:
+  type: software
+  authors:
+    - family-names: "Authors"
+      given-names: "Anonymous"
+  title: "Detection Is Not Defense: A DURA Evaluation of Spectral Monitoring for Hidden-State Poisoning"
+  year: 2026

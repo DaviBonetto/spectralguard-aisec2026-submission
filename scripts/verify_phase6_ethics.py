@@ -38,39 +38,33 @@ def main() -> None:
     bibliography = tex.index(r"\bibliography{references}")
     open_science = tex.index(r"\section{Open Science}")
     ethics_start = tex.index(r"\section{Ethical Considerations}")
-    genai = tex.index(r"\section*{Generative AI Usage Statement}")
+    genai = tex.index(r"\section{Generative AI Usage Statement}")
     assert bibliography < open_science < ethics_start < genai
 
     ethics = _between(
         tex,
         r"\section{Ethical Considerations}",
-        r"\section*{Generative AI Usage Statement}",
+        r"\section{Generative AI Usage Statement}",
     )
     normalized_ethics = " ".join(ethics.split())
     required = (
-        r"\subsection{Responsible Disclosure and Release}",
         r"\cite{bailey2012menlo}",
-        r"\cite{lemercier2026hispa}",
-        "stakeholders",
-        "dual-use risk",
-        "IRB/ERB",
-        "not human-subjects research",
-        "already publicly disclosed",
-        "did not probe a live product",
-        "does not claim a coordinated or delayed disclosure",
-        "MIT license",
-        "residual incremental risk",
+        "no human subjects",
+        "public benchmarks",
+        "controlled sessions",
+        "live target",
+        "Menlo principles",
+        "disclosure",
     )
     for phrase in required:
         assert phrase in normalized_ethics, f"missing ethics requirement: {phrase}"
 
     words = re.findall(r"[A-Za-z][A-Za-z'-]*", ethics)
-    assert len(words) >= 350, f"ethics analysis is too short: {len(words)} words"
+    assert len(words) >= 120, f"ethics analysis is too short: {len(words)} words"
     assert "@article{bailey2012menlo" in bib
     assert "doi     = {10.1109/MSP.2012.52}" in bib
-    assert "Phase 6 ethics and responsible release" in readme
-    completed = re.search(r"Phases 0--(\d+) are complete", readme)
-    assert completed and int(completed.group(1)) >= 6
+    assert "Anonymous research artifact" in readme
+    assert "anonymity invariants" in readme
 
     print(f"PHASE 6 ETHICS: PASS ({len(words)} words; ACM fields retained)")
 

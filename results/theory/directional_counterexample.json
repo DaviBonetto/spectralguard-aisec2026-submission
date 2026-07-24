@@ -1,6 +1,6 @@
 {
   "architecture_evidence": "results/foundation/mamba_130m_kappa.json",
-  "architecture_evidence_sha256": "474437f75485b7cd19136159a049eb32100fcd0ab1184cd5b119a782a30bbd5b",
+  "architecture_evidence_sha256": "4d085e3e4adcc882a319a639f9c582335919b7bb13a89d11d753be609ba5bfa9",
   "config_path": "configs/phase2_directional.yaml",
   "config_sha256": "0068218c94a1fe63f82c14360c81363e00f7fc74bd31c2082e1f15da5645b0a0",
   "construction": {

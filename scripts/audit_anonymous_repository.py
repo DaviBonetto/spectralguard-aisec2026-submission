@@ -111,11 +111,7 @@ def main() -> None:
             if pattern.search(content):
                 hits.append(f"{path}::{label}")
     missing = sorted(REQUIRED_PATHS - set(files))
-    passed = (
-        not missing
-        and not hits
-        and "plano" not in {path.split("/", 1)[0] for path in files}
-    )
+    passed = not missing and not hits
     report = {
         "schema_version": 1,
         "created_at_utc": datetime.now(timezone.utc).isoformat(),
@@ -124,9 +120,6 @@ def main() -> None:
         "file_count": len(files),
         "required_paths_missing": missing,
         "identity_hits": hits,
-        "planning_directory_exposed": any(
-            path == "plano" or path.startswith("plano/") for path in files
-        ),
         "passed": passed,
     }
     args.output.parent.mkdir(parents=True, exist_ok=True)

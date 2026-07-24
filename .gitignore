@@ -1,7 +1,3 @@
-# Local planning and submission material; never publish or track.
-plano/
-/AGENTS.md
-
 # Python environments and generated artifacts.
 .venv/
 __pycache__/
@@ -15,6 +11,12 @@ __pycache__/
 htmlcov/
 .DS_Store
 Thumbs.db
+
+# Planning and agent instructions.
+plano/
+AGENTS*.md
+# Local private denylist for anonymity checks (author names, etc.) — never tracked.
+.spectralguard_denylist
 
 # LaTeX build products.
 paper/*.aux
@@ -39,8 +41,7 @@ results/**/*.bin
 results/**/*.safetensors
 results/**/wandb/
 
-# Lightning AI Phase 3/4/5 runtime workspace. The tracked README documents the
-# layout; all generated datasets, checkpoints, logs, model caches, and ZIPs
-# remain local and are transferred explicitly by the researcher.
+# Local runtime workspace. The tracked README documents the layout; all
+# generated datasets, checkpoints, logs, model caches, and exports remain local.
 Experiments/*
 !Experiments/README.md

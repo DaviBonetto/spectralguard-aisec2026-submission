@@ -1,0 +1,63 @@
+{
+  "schema_version": 2,
+  "status": "PASS",
+  "created_at": "2026-07-22",
+  "manuscript": {
+    "path": "paper/main.pdf",
+    "sha256": "01e0fd0bcf9c8ccbe748a41359f85bb1706abb3f67e704c6854b0dc0a1ac5988",
+    "historical_pre_release_sha256": "3ae73c93894d8eec3da9c1bdb5a90180035916ffb630750ba3d9197b18f26fd0",
+    "historical_hash_status": "superseded by the canonical final compilation",
+    "pages": 11,
+    "format": "ACM sigconf, anonymous",
+    "research_questions": 4,
+    "answer_boxes": 4,
+    "tables": 14,
+    "vector_figures": 4
+  },
+  "bibliography": {
+    "bib_entries": 29,
+    "cited_entries": 29,
+    "missing_entries": 0,
+    "orphaned_entries": 0,
+    "audit": "results/foundation/reference_audit.json"
+  },
+  "scientific_corrections": {
+    "monitor_schema": {
+      "description": "one temporal rho_mean feature per monitored layer",
+      "feature_count": 64,
+      "serialized_order": "layer_0_rho_mean through layer_63_rho_mean",
+      "audit": "results/foundation/phase8_feature_schema_audit.json"
+    },
+    "task_score_table": "Table 9 labels the broad clean campaign separately from the paired adaptive v2 and v3 subsets.",
+    "window_unit": "32-token monitoring windows with a stride of eight tokens",
+    "broken_reference": "Equations (5) and (6) render through LaTeX cross-references."
+  },
+  "editorial_changes": [
+    "DURA framing across Detection, Utility, Robustness, and Availability",
+    "RQ1-RQ4 structure with explicit answer boxes",
+    "expanded primary-source related work and positioning matrix",
+    "full-width overview and three conclusion-first multi-panel evidence figures",
+    "readable protocol, adaptive, task, availability, budget, policy, and uncertainty tables",
+    "separate bootstrap sampling uncertainty from seed-to-seed training variation",
+    "formalized the frozen 64-feature monitor and response-policy semantics in the main text",
+    "kept an auditable CPU-first reproduction path while moving duplicated protocol detail to the artifact",
+    "removed internal workflow language and unsupported priority claims"
+  ],
+  "quality_gates": {
+    "tectonic_compile": "PASS",
+    "visual_inspection_critical_pages": "PASS (pages 4, 7, and 11)",
+    "phase6_ethics": "PASS",
+    "phase7_positioning": "PASS",
+    "phase8_manuscript": "PASS",
+    "pytest": "63 passed",
+    "overfull_boxes": 0,
+    "undefined_citations": 0,
+    "undefined_references": 0,
+    "local_path_or_identity_leaks": 0
+  },
+  "official_guidelines": {
+    "aisec": "https://aisec.cc/",
+    "ccs": "https://www.sigsac.org/ccs/CCS2026/call-for/call-for-papers.html",
+    "acm_rights_placeholders_retained": true
+  }
+}

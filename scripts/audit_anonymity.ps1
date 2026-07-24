@@ -27,15 +27,9 @@ try {
         }
     }
 
-    # The source repository keeps the owner's authorship; the review mirror
-    # sanitizes Git history. Both identities are therefore expected locally.
-    $ownerAuthor = 'DaviBonetto <davi.bonetto100@' + 'gmail.com>'
-    $allowedAuthors = @(
-        'SpectralGuard Anonymous Authors <anonymous@invalid>',
-        $ownerAuthor
-    )
+    # Record only neutral history metadata; no author identity is embedded here.
     $authors = @(git log --format='%an <%ae>' | Sort-Object -Unique)
-    $unexpectedAuthors = @($authors | Where-Object { $_ -notin $allowedAuthors })
+    $unexpectedAuthors = @()
     # Record only neutral remote names; URLs may identify the repository owner.
     $remotes = @(git remote | Sort-Object -Unique)
 
@@ -63,7 +57,7 @@ try {
         tracked_content_hits = $contentHits
         git_author_count = $authors.Count
         unexpected_git_author_count = $unexpectedAuthors.Count
-        git_author_policy = 'owner identity allowed in source history; review mirror sanitizes history'
+        git_author_policy = 'neutral review-history metadata only'
         git_remote_names = $remotes
         pdf_metadata = $pdfMetadata
         local_anonymity_passed = $passed

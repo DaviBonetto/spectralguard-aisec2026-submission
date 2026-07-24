@@ -1,12 +1,12 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "generator": "scripts/build_phase8_figures.py",
-  "style": "Okabe-Ito, vector PDF, embedded TrueType fonts",
+  "style": "Okabe-Ito palette; vector PDF; embedded TrueType fonts; conclusion-first panels",
   "figures": {
     "evaluation_pipeline.pdf": {
       "path": "paper/figures/evaluation_pipeline.pdf",
-      "sha256": "bd7104039eace07c68c7c258f4be810348fa997e4b89873dfc3f63be89f053b5",
-      "bytes": 26391,
+      "sha256": "78e4f056a9f4e7c23064d4f684b445d39204c9b5c2644712a88378c68ced5020",
+      "bytes": 27908,
       "format": "vector_pdf",
       "sources": [
         {
@@ -20,25 +20,45 @@
         {
           "path": "configs/phase5.yaml",
           "sha256": "1a376aef930c1283891e6488dcea8a5a0c449c6048b8b91784236f9bf8dbfcba"
+        },
+        {
+          "path": "results/phase3/summaries/detector_uncertainty.csv",
+          "sha256": "671087677e94ad753d2ad19651ee544f957b0c767246bb45130335c4ae384d1a"
+        },
+        {
+          "path": "results/phase3/summaries/adaptive_v2_v3_paired.csv",
+          "sha256": "057f1671d135dff51f8ecddfc42d40ca7b273378f540c165edc9a79aafc89340"
+        },
+        {
+          "path": "results/phase4/summaries/worst_case_defense.csv",
+          "sha256": "ee33ef5ad0182351a0d594c69af9b8f1fe526504a4dfd272d6df4a74fa166310"
+        },
+        {
+          "path": "results/phase4/summaries/attack_comparison_by_task.csv",
+          "sha256": "0bfd766eb07d5e497a154a9e95db986f9958e33bc1f63bfe6202ee9926d7ed5c"
+        },
+        {
+          "path": "results/phase5/summaries/session_survival.csv",
+          "sha256": "7116f6cae32d050f4380fa88c53e17cb4420b992ffbfe310182f991db7512792"
         }
       ]
     },
     "theory_counterexample.pdf": {
       "path": "paper/figures/theory_counterexample.pdf",
-      "sha256": "707c71e31ad966e21b71b97d4b2e9c8af41d83dde057e5ae756508010b51c012",
-      "bytes": 27969,
+      "sha256": "c0963d1217a95e18b9689a5f00c6bd416bf434a213d70260eb1a1f4e763f80cb",
+      "bytes": 35549,
       "format": "vector_pdf",
       "sources": [
         {
           "path": "results/theory/directional_counterexample_table.csv",
-          "sha256": "fb814dcb738ff44f1cc692c22ce372e1b0d513b5e9074e9e73038397832d0590"
+          "sha256": "2f3c64cfa8c11a6deb88330a01b2a24564329e3905348e80bbf266bac30d74e3"
         }
       ]
     },
     "detection_adaptation.pdf": {
       "path": "paper/figures/detection_adaptation.pdf",
-      "sha256": "727334ab3f499727110a86d8dfbfac74585a04aa7ae1f23a2f3d0aeb101b3e87",
-      "bytes": 29435,
+      "sha256": "f55afdd49391969d819ba13b22f3adab3a4af4e0e1dbb510bf19e127cb98ebff",
+      "bytes": 28255,
       "format": "vector_pdf",
       "sources": [
         {
@@ -56,13 +76,17 @@
         {
           "path": "results/phase4/summaries/worst_case_defense.csv",
           "sha256": "ee33ef5ad0182351a0d594c69af9b8f1fe526504a4dfd272d6df4a74fa166310"
+        },
+        {
+          "path": "results/phase4/summaries/attack_comparison_by_task.csv",
+          "sha256": "0bfd766eb07d5e497a154a9e95db986f9958e33bc1f63bfe6202ee9926d7ed5c"
         }
       ]
     },
     "availability_cost.pdf": {
       "path": "paper/figures/availability_cost.pdf",
-      "sha256": "6333a271aa6bf80434d2a67b0f17f1c41e26931f99ec066e1858424038905823",
-      "bytes": 25573,
+      "sha256": "cba26bb1213f1116ba830df892249337e34db553fafb79183b43bddc8c1c8d90",
+      "bytes": 23739,
       "format": "vector_pdf",
       "sources": [
         {

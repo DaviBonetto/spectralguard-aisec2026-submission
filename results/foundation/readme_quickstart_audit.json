@@ -1,0 +1,87 @@
+{
+  "schema_version": 1,
+  "created_at_utc": "2026-07-24T19:07:48.382450+00:00",
+  "clean_clone_environment": "git worktree from real commit",
+  "method": "git worktree add --detach <real_commit> -- zero manual file copies, zero working-directory overlay",
+  "commit_binding": "recorded in the external pre-push verification log",
+  "experiments_raw_absent": true,
+  "pdf_absent_from_candidate": true,
+  "manual_files_copied": false,
+  "working_directory_overlay": false,
+  "total_duration_seconds": 74.28,
+  "commands_executed": [
+    {
+      "command": "uv sync --locked",
+      "exit_code": 0,
+      "duration_seconds": 17.96,
+      "stdout": "48 packages installed",
+      "stderr": "",
+      "passed": true
+    },
+    {
+      "command": "uv run python scripts/verify_phase2_results.py",
+      "exit_code": 0,
+      "duration_seconds": 0.36,
+      "stdout": "PASS: Phase 2 evidence, scope, statistics, and paper build are consistent.",
+      "stderr": "",
+      "passed": true
+    },
+    {
+      "command": "uv run python scripts/verify_phase3_results.py",
+      "exit_code": 0,
+      "duration_seconds": 4.46,
+      "stdout": "PHASE 3 TRACKED EVIDENCE: PASS (18/18 semantic gates)",
+      "stderr": "",
+      "passed": true
+    },
+    {
+      "command": "uv run python scripts/verify_phase4_results.py",
+      "exit_code": 0,
+      "duration_seconds": 8.16,
+      "stdout": "PHASE 4 RESULTS: PASS",
+      "stderr": "",
+      "passed": true
+    },
+    {
+      "command": "uv run python scripts/verify_phase5_results.py",
+      "exit_code": 0,
+      "duration_seconds": 1.12,
+      "stdout": "PHASE 5 RESULTS: PASS (complete negative availability result)",
+      "stderr": "",
+      "passed": true
+    },
+    {
+      "command": "uv run python scripts/verify_phase6_ethics.py",
+      "exit_code": 0,
+      "duration_seconds": 0.23,
+      "stdout": "PHASE 6 ETHICS: PASS (142 words; ACM fields retained)",
+      "stderr": "",
+      "passed": true
+    },
+    {
+      "command": "uv run python scripts/verify_phase7_positioning.py",
+      "exit_code": 0,
+      "duration_seconds": 0.85,
+      "stdout": "PHASE 7 POSITIONING: PASS",
+      "stderr": "",
+      "passed": true
+    },
+    {
+      "command": "uv run python scripts/verify_phase8_manuscript.py",
+      "exit_code": 0,
+      "duration_seconds": 6.84,
+      "stdout": "PHASE 8 MANUSCRIPT: PASS (page count unavailable pages, 4 vector figures, 29 references, 64-feature schema exact)",
+      "stderr": "",
+      "passed": true
+    },
+    {
+      "command": "uv run python -m pytest -q",
+      "exit_code": 0,
+      "duration_seconds": 34.29,
+      "stdout": "...............................................................          [100%]\n63 passed, 14 warnings in 31.32s",
+      "stderr": "",
+      "passed": true
+    }
+  ],
+  "passed": true
+}

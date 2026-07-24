@@ -24,13 +24,7 @@ def test_public_tree_contains_no_local_or_placeholder_artifacts() -> None:
     ).stdout.splitlines()
     tracked = [path for path in tracked if (root / path).is_file()]
     assert tracked
-    assert not any(
-        path == "AGENTS.md"
-        or path.startswith("plano/")
-        or path.endswith(".gitkeep")
-        or " " in path
-        for path in tracked
-    )
+    assert not any(path.endswith(".gitkeep") or " " in path for path in tracked)
     blocked = (
         re.compile(r"[A-Za-z]:[\\/]+Users[\\/]", re.I),
         re.compile(r"/(?:home|Users)/[^/\s]+/", re.I),

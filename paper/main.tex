@@ -1,19 +1,33 @@
 \documentclass[sigconf]{acmart}
+\usepackage{tabularx}
+\usepackage{array}
+\usepackage{colortbl}
+\usepackage{placeins}
 \setlength{\emergencystretch}{1.5em}
 \graphicspath{{figures/}}
 
-% AISec 2026 follows the ACM CCS 2026 formatting instructions, except for
-% its 10-page body + 2-page appendix limit.  The CCS 2026 minimal sample
-% requires these provisional rights-management fields at submission time.
+% The CCS 2026 minimal sample requires these provisional rights fields in the
+% review manuscript. They are replaced only after acceptance and rights setup.
 \setcopyright{acmlicensed}
 \copyrightyear{2018}
 \acmYear{2018}
 \acmDOI{XXXXXXX.XXXXXXX}
-\acmConference[AISec '26]{Proceedings of the 2026 ACM Workshop on Artificial
-  Intelligence and Security}{November 15--19, 2026}{The Hague, Netherlands}
+\acmConference[AISec '26]{2026 ACM Workshop on Artificial Intelligence and Security}
+  {November 15--19, 2026}{The Hague, Netherlands}
 \acmISBN{978-1-4503-XXXX-X/2018/06}
 
-\title{Detection Is Not Defense: Stress-Testing Spectral Monitoring for Hidden-State Poisoning}
+\definecolor{SGBlue}{HTML}{0072B2}
+\definecolor{SGPale}{HTML}{EAF4FA}
+\definecolor{SGGreen}{HTML}{E7F6F1}
+\definecolor{SGOrange}{HTML}{FFF4D8}
+\newcolumntype{Y}{>{\raggedright\arraybackslash}X}
+\newcommand{\fullmark}{\ensuremath{\bullet}}
+\newcommand{\partialmark}{\ensuremath{\circ}}
+\newcommand{\answerbox}[2]{\par\smallskip\noindent
+  \colorbox{SGPale}{\parbox{\dimexpr\columnwidth-2\fboxsep\relax}{
+  \textbf{Answer to #1.} #2}}\par\smallskip}
+
+\title{Detection Is Not Defense: A DURA Evaluation of Spectral Monitoring for Hidden-State Poisoning}
 
 \begin{CCSXML}
 <ccs2012>
@@ -29,807 +43,959 @@
 </concept>
 </ccs2012>
 \end{CCSXML}
-
 \ccsdesc[500]{Security and privacy~Intrusion/anomaly detection and malware mitigation}
 \ccsdesc[300]{Computing methodologies~Machine learning}
-\keywords{state space models, machine learning security, adversarial machine learning, model robustness}
+\keywords{state-space models, adversarial machine learning, hidden-state poisoning, anomaly detection, availability}
+
 \begin{document}
 \begin{abstract}
 Hidden-state poisoning can corrupt the recurrent memory of state-space
-language models, but a detector-level score does not establish preserved task
-behavior or operational availability. We first repair the theoretical basis
-for spectral monitoring: for frozen diagonal transitions we derive an exact
-forgetting certificate, and a constructive study of 1,000 diagonal systems
-shows that readout failure can coexist with an unchanged spectral radius,
-ruling out unconditional completeness for radius-only monitoring. We then
-stress-test layer-wise spectral detection under a leakage-controlled protocol
-spanning seven models, four tasks, and 19,300 evaluated rows. SpectralGuard
-obtains F1 0.806 and AUC 0.887, whereas a CLASP-style BOE+XGBoost comparator
-obtains mean F1 0.969 and AUC 0.997 under the same internal split protocol.
-Detector-aware adaptive attacks reduce attacked task accuracy to 1.67\%,
-statistically indistinguishable from 1.33\% for the preceding adaptive attack
-in a floor-saturated comparison; standardized mean spectral radius alone has
-weak explanatory power for correctness (McFadden pseudo-$R^2$
-0.0089--0.0337). Finally, a fail-closed policy blocks all 320 held-out clean
-sessions, while a validation-selected graduated policy allows only 8/320 to
-survive and incurs 4.29$\times$ total latency. These results show that spectral
-features carry predictive signal, but neither high aggregate detection scores
-nor radius-only mechanisms establish a robust and available defense.
-Hidden-state-poisoning evaluations must jointly test detection, attacked-task
-utility, adaptive evasion, and session-level availability.
+language models, yet a detector's aggregate score does not establish preserved
+task behavior or operational availability. We introduce \emph{DURA}, an
+evaluation methodology that separates Detection, Utility, Robustness, and
+Availability. First, an exact forgetting certificate and a constructive
+counterexample delimit what transition spectral radius can and cannot certify.
+Then, a leakage-controlled campaign spanning seven checkpoints and four tasks
+tests a frozen layer-wise spectral monitor against progressively stronger
+attackers and a representation-based comparator. The spectral monitor reaches
+F1~$0.806$ (95\% cluster-bootstrap CI $[0.795,0.818]$), but a common-protocol
+BOE+XGBoost comparator reaches mean F1~$0.969$. Clean task accuracy is already
+only $13/300$ ($4.33\%$); under a detector-aware attack it is $5/300$
+($1.67\%$). Under a validation-selected graduated
+policy, just 8 of 320 clean sessions survive. Thus spectral dynamics contain
+detection signal, but separability does not imply robust or available defense.
+DURA exposes this distinction and provides an auditable template for evaluating
+hidden-state monitors beyond headline F1 and ROC-AUC.
 \end{abstract}
 \maketitle
 
-% Double-blind submission: deliberately no \author, \affiliation, \email,
-% acknowledgments, funding statement, or identifying repository URL appears.
+% Double-blind review: no authors, affiliations, acknowledgments, funding, or
+% identifying repository URL are included. The artifact URL is anonymized.
 
 \section{Introduction}
-State-space language models (SSMs) offer linear-time sequence processing by
-maintaining a recurrent hidden state. That state is also a security boundary:
-a short hostile insertion can alter later behavior without remaining in the
-visible context. Hidden State Poisoning Attacks (HiSPAs) demonstrate this
-failure mode in Mamba-family models \cite{lemercier2026hispa}. A natural
-response is to monitor internal dynamics, but a high detector score answers
-only whether selected attacks are separable on a benchmark. It does not show
-that useful behavior survives an adaptive attack, that a scalar statistic is a
-complete failure indicator, or that false alarms permit benign sessions to
-continue.
+State-space language models (SSMs) replace quadratic attention with a recurrent
+state that supports efficient long-sequence processing. That state is also a
+security boundary. A short hostile insertion can alter future computation even
+after the inserted text is no longer prominent in the visible context. Hidden
+State Poisoning Attacks (HiSPAs) demonstrate this failure in Mamba-family
+models and hybrid architectures \cite{lemercier2026hispa}. The natural defense
+response is to monitor internal dynamics. The natural evaluation mistake is to
+equate a monitor's test-set discrimination with a usable defense.
 
-We examine that gap through SpectralGuard, a layer-wise monitor derived from
-the discretized state transition. The study began with a stronger hypothesis:
-that spectral contraction explained hidden-state poisoning and enabled a
-complete detector. Our audit rejects that hypothesis. Spectral radius gives an
-exact forgetting upper bound for frozen diagonal transitions, yet an unchanged
-radius can coexist with total readout loss. Empirically, radius is predictive
-but weakly explanatory, and a richer spectral detector is substantially
-outperformed by a CLASP-style block-output-embedding comparator under one
-shared internal protocol. Most importantly, adaptive attacks preserve very
-low attacked-task accuracy, while a fail-closed deployment rule denies service
-to every clean held-out session.
+Consider a detector with high area under the ROC curve. It may still miss an
+attacker that optimizes against its score, block benign work at an unacceptable
+rate, or preserve a high detection rate while the underlying task has already
+collapsed. These are distinct failures with distinct units of analysis. The
+adversarial-ML literature has repeatedly shown that static or weakly tuned
+evaluations can overstate robustness \cite{carlini2017towards,
+carlini2017detectors,athalye2018obfuscated,croce2020autoattack}. Security
+operations adds another constraint: even accurate alarms can be unusable when
+base rates, alert volume, and response policies are ignored
+\cite{axelsson2000baserate,alahmadi2022falsepositives}. Hidden-state poisoning
+requires both lessons at once.
 
-This paper makes five contributions:
+We study SpectralGuard, a frozen monitor built from layer-wise trajectories of
+the discretized state-transition spectral radius. Rather than present it as a
+new state-of-the-art defense, we use it to ask a harder question: \emph{what
+evidence is necessary before an internal monitor deserves to be called a
+defense?} Our answer is DURA---a four-axis methodology that separately measures
+\textbf{D}etection, attacked-task \textbf{U}tility, adaptive
+\textbf{R}obustness, and session-level \textbf{A}vailability. Figure
+\ref{fig:overview} makes the evaluation boundary explicit.
+
+\begin{figure*}[t]
+  \centering
+  \includegraphics[width=\textwidth]{evaluation_pipeline.pdf}
+  \caption{\textbf{A detector score is only one coordinate of defense.} DURA
+  follows a hidden-state attack through internal telemetry, a frozen monitor,
+  and a response policy, then evaluates four non-substitutable outcomes. The
+  paired values come from the corresponding DURA evaluation units rather than
+  one pooled protocol; low utility and availability cannot hide behind F1.}
+  \label{fig:overview}
+\end{figure*}
+
+We answer four research questions. \textbf{RQ1:} what does spectral radius
+certify, and what failure is invisible to a radius-only monitor? \textbf{RQ2:}
+how much held-out detection signal do layer-wise spectral features provide
+relative to a representation-based comparator? \textbf{RQ3:} how does the
+frozen monitor behave as attacker knowledge increases, and is task utility
+preserved? \textbf{RQ4:} can a response policy sustain benign multi-turn
+sessions at acceptable cost? The study uses disjoint calibration, validation,
+and test roles; frozen prompt clusters; immutable model revisions; and explicit
+uncertainty whose interpretation matches its source.
+
+This paper contributes:
 \begin{itemize}
-  \item We replace an invalid persistence argument with an exact diagonal
-  forgetting certificate and state its assumptions explicitly.
-  \item We provide 1,000 constructive counterexamples showing that a
-  radius-only monitor is not unconditionally complete.
-  \item We evaluate SpectralGuard across seven models, four tasks, and 19,300
-  rows with disjoint calibration, validation, and test roles.
-  \item We compare against a CLASP-style BOE+XGBoost implementation and
-  distinguish fixed-test-set bootstrap uncertainty from seed-to-seed training
-  variation; we make no detector-superiority claim.
-  \item We connect detection to attacked-task utility, adaptive evasion, and
-  multi-turn availability, revealing a defense-induced denial-of-service
-  failure that aggregate F1 and AUC conceal.
+  \item \textbf{A theory boundary.} We derive an exact forgetting certificate
+  for frozen diagonal transitions and prove that, in dimension at least two,
+  no transition-radius-only readout guarantee can be unconditional. A
+  1,000-instance constructive test illustrates the blind spot.
+  \item \textbf{The DURA methodology.} We operationalize four distinct defense
+  claims across seven checkpoints, four tasks, common splits, transfer and
+  adaptive attackers, matched benign controls, and multi-turn sessions.
+  \item \textbf{An operational finding.} Spectral features are predictive, but
+  the representation comparator is stronger, detector-aware attacks leave task
+  accuracy near the floor, and both response policies largely deny service to
+  benign sessions. The monitor is therefore evidence of signal, not evidence
+  of a deployable defense.
 \end{itemize}
 
-Figure~\ref{fig:overview} summarizes the distinction that organizes the
-paper.  We ask four research questions: \textbf{RQ1}, what does spectral
-radius certify, and where does a radius-only monitor provably fail?
-\textbf{RQ2}, how much held-out detection signal do layer-wise spectral
-features provide relative to a representation-based comparator?
-\textbf{RQ3}, does that signal survive progressively stronger adaptive
-attackers while preserving task utility?  \textbf{RQ4}, can a frozen detector
-and response policy sustain benign multi-turn sessions at acceptable cost?
-Each question has a separate unit of analysis and acceptance criterion; no
-single aggregate score substitutes for the other three.
-
-\begin{figure}[t]
-  \centering
-  \includegraphics[width=\columnwidth]{evaluation_pipeline.pdf}
-  \caption{Evaluation boundary. SpectralGuard observes layer-wise transition
-  dynamics and produces a score, but a usable defense additionally requires
-  preserved attacked-task utility, robustness to detector-aware adaptation,
-  and benign-session availability. Our four research questions follow this
-  separation.}
-  \label{fig:overview}
-\end{figure}
-
 \section{Background and Related Work}
+\subsection{State-space sequence models and their security surface}
+Transformers obtain flexible content-based interactions at quadratic attention
+cost \cite{vaswani2017attention}. Structured SSMs instead express sequence
+processing through linear dynamics and efficient convolution or recurrence.
+S4 made long-range structured transitions practical
+\cite{gu2022s4}; S5 simplified the construction to a multi-input,
+multi-output layer \cite{smith2023s5}; and Hyena explored subquadratic long
+convolutions with data-controlled gating \cite{poli2023hyena}. Mamba makes
+SSM parameters input-dependent, selecting what to propagate or forget while
+retaining linear scaling \cite{gu2024mamba}. Mamba-2 relates selective SSMs
+to structured semiseparable matrices through state-space duality
+\cite{dao2024mamba2}. These architectures expose internal recurrent dynamics
+whose persistence is not captured by inspecting visible tokens alone.
 
-Structured state-space sequence models derive efficient long-context
-computation from a recurrent state update. S4 made this construction practical
-through a structured and stably diagonalizable state matrix
-\cite{gu2022s4}. Mamba subsequently made the SSM parameters input-dependent,
-allowing the model to select what to propagate or forget while retaining
-linear sequence scaling \cite{gu2024mamba}. Mamba-2 relates selective SSMs to
-structured semiseparable matrices and refines the recurrent layer through
-state-space duality \cite{dao2024mamba2}. These architectures improve
-efficiency, but their persistent internal state also creates a security surface
-that is not captured by conventional visible-context inspection.
+HiSPA targets that internal surface: adversarial text corrupts recurrent memory
+and affects later task behavior \cite{lemercier2026hispa}. CLASP detects such
+attacks from block-output embeddings (BOEs) using token- and document-level
+classifiers \cite{lemercier2026clasp}. Our work is complementary in mechanism
+and different in objective. SpectralGuard observes transition dynamics rather
+than BOEs; DURA asks whether either kind of signal survives stronger attackers,
+preserves the task, and supports an operational response policy.
 
-Le Mercier, Develder, and Demeester introduced Hidden State Poisoning
-Attacks (HiSPAs), showing that short adversarial strings can corrupt the
-recurrent memory of Mamba-family models and evaluating the effect with the
-RoBench-25 benchmark \cite{lemercier2026hispa}.  Their latest arXiv revision
-also studies Mamba-2 and hybrid SSM--Transformer models.
+\subsection{Internal and anomaly detection}
+Anomaly and out-of-distribution detection often uses confidence, feature, or
+energy statistics \cite{hendrycks2017baseline,liang2018odin,liu2020energy}.
+Raw scores are not automatically calibrated probabilities
+\cite{guo2017calibration}, and selective prediction explicitly studies the
+risk--coverage tradeoff induced by abstention \cite{geifman2017selective}.
+Backdoor defenses likewise inspect model behavior or input anomalies: Neural
+Cleanse reverse-engineers class-specific triggers \cite{wang2019neuralcleanse},
+STRIP measures prediction entropy under input perturbations
+\cite{gao2019strip}, and ONION filters anomalous words in textual inputs
+\cite{qi2021onion}. These methods motivate internal monitoring, but their
+existence also warns against treating one statistic as a complete security
+invariant.
 
-Concurrent work proposes CLASP, a token- and document-level detector trained
-with XGBoost over Mamba block-output embeddings (BOEs)
-\cite{lemercier2026clasp}.  CLASP is evaluated primarily on controlled
-injections into a resume corpus and explicitly leaves adaptive evasion and
-cross-domain validation open.  SpectralGuard instead investigates the
-dynamics of the discretized state-transition operator and a detector based on
-layer-wise spectral measurements.  Under the common Phase~3 protocol,
-SpectralGuard obtained F1~$0.806$ and AUC~$0.887$, while our CLASP-style
-BOE+XGBoost reimplementation obtained F1~$0.969$ and AUC~$0.997$.  The latter
-uses the published CLASP design elements rather than official pretrained
-weights; accordingly, we claim neither that the reimplementation is identical
-to the authors' release nor that SpectralGuard is empirically superior.
+\subsection{Adaptive and operational evaluation}
+Adversarial examples show that empirical accuracy under a fixed attack is not a
+robustness certificate \cite{goodfellow2015explaining,carlini2017towards}.
+Detector bypass and gradient obfuscation work sharpen the requirement: the
+attacker must know the claimed defense and optimize against it
+\cite{carlini2017detectors,athalye2018obfuscated}. AutoAttack further shows how
+attack choice and tuning alter apparent robustness \cite{croce2020autoattack}.
+DURA therefore escalates from transfer to query and joint white-box access
+without refitting the detector.
 
-Adaptive evaluation must also test whether a defense relies on brittle or
-obfuscated gradients \cite{athalye2018obfuscated}. More broadly, security
-systems can impose operational costs that benchmark-level false-positive rates
-hide. Classifier scores also need not be calibrated probabilities
-\cite{guo2017calibration}; we therefore select response thresholds on validation
-data rather than interpret raw detector scores as confidence. Alahmadi et al.
-quantify the cost of false positives in network intrusion
-detection \cite{alahmadi2022falsepositives}, while Piet et al. evaluate SSH
-defenses at connection and deployment scales \cite{piet2023ssh}. We performed
-a dedicated search of work on hidden-state poisoning, adaptive detector
-evaluation, and session- or connection-level availability. We found no prior
-study that jointly measures hidden-state-poisoning detection, attacked-task
-utility, adaptive evasion, and benign multi-turn session survival. This is a
-scope observation used to motivate our evaluation matrix; we make no general
-priority claim because adjacent security work already studies operational false
-positives and connection-level effects.
+Deployment units matter too. Closed-world benchmark assumptions can fail for
+network intrusion detection \cite{sommer2010closedworld}; base rates can make
+small false-positive rates operationally dominant
+\cite{axelsson2000baserate}; and common ML-security pitfalls include leakage,
+weak baselines, and lab-only evaluation \cite{arp2022dosdonts}. SOC analysts
+report the direct cost of noisy alarms \cite{alahmadi2022falsepositives}, while
+connection-level SSH detection demonstrates the value of evaluating interactive
+units rather than isolated records \cite{piet2023ssh}. We make no general
+priority claim for session-level evaluation. Our narrower contribution is to
+place benign session survival alongside detection, task utility, and adaptive
+evasion for hidden-state poisoning.
 
-\section{Spectral Foundations and Theory}
+\begin{table*}[t]
+\caption{\textbf{DURA closes a coverage gap without claiming the first session
+study.} \fullmark{} marks an explicit target, \partialmark{} a related but
+differently scoped outcome, and -- an unevaluated axis.}
+\label{tab:positioning}
+\centering\small
+\begin{tabularx}{\textwidth}{@{}lYYYYY@{}}
+\toprule
+Work & Internal signal & Adaptive attacker & Task utility & Operational unit & Primary scope \\
+\midrule
+HiSPA \cite{lemercier2026hispa} & hidden state & \partialmark & \fullmark & -- & attack / benchmark \\
+CLASP \cite{lemercier2026clasp} & BOE & -- & \partialmark & token, document & detection \\
+Adversarial detector evaluation \cite{carlini2017detectors,athalye2018obfuscated} & model-dependent & \fullmark & \fullmark & example & robustness \\
+Operational IDS \cite{alahmadi2022falsepositives,piet2023ssh} & traffic / logs & -- & -- & alert, connection & operations \\
+\rowcolor{SGPale}This work & transition radius + BOE comparator & \fullmark & \fullmark & prompt, session & joint DURA audit \\
+\bottomrule
+\end{tabularx}
+\end{table*}
 
-\paragraph{Condition-number convention.}
-We use $\kappa=\operatorname{cond}_2(V)$ for an eigenvector matrix $V$ that
-diagonalizes the state-transition operator; this is distinct from
-$\operatorname{cond}_2(A)$.  In the pinned Mamba-130M checkpoint, all 24
-continuous-time $A$ operators (and consequently $\exp(\Delta_t A)$) are real
-and diagonal. Thus $V=I$ and $\kappa=1$ exactly. A direct audit of revision
-prefix \texttt{1e76775f628f} confirms this structure; the artifact records the
-complete immutable revision.
-The legacy value $\kappa\approx3$ is unsupported and is not used in the
-revised analysis.
+\section{Threat Model and DURA Questions}
+The protected system is an autoregressive Mamba-family language model whose
+recurrent state persists across an intervening hostile message and a later task
+query. The defender can observe internal activations and discretized diagonal
+transition parameters, but does not modify model weights. The monitor and its
+threshold are frozen before final testing. A response policy may block a
+session after alerts; it cannot recover a corrupted state.
 
-Let the frozen transition at one token be diagonal:
+\paragraph{Attacker ladder.}
+We consider four access levels. A \emph{transfer} attacker crafts against a
+surrogate or fixed task loss. A \emph{query} attacker receives monitor outcomes
+and uses at most 256 detector queries; the realized candidate count has median
+80 and 95th percentile 137.6. A \emph{joint white-box} attacker differentiates
+through task and detector objectives, using three restarts and spectral-loss
+weights $\lambda\in\{0.25,1,2\}$. An \emph{adversarial-benign} attacker searches
+for innocuous-looking text that triggers blocking while preserving the benign
+task intent. We also include original HiSPA, gradient-guided, matched benign,
+and clean controls. These levels test different claims; none is relabeled as a
+formal worst-case guarantee.
+
+\paragraph{Defense claims and acceptance units.}
+RQ1 is analytic and constructive: the unit is a dynamical system. RQ2 uses
+prompt-cluster-disjoint held-out rows. RQ3 uses paired attacked prompts and a
+frozen detector. RQ4 uses three-turn sessions and windows. A model can pass one
+question and fail another. Precision--recall and ROC summaries are both
+reported because their interpretations differ under class imbalance
+\cite{davis2006prroc}.
+
+\section{Spectral Foundations: RQ1}
+For one frozen token transition, let
 \begin{equation}
  \bar A=\operatorname{diag}(a_1,\ldots,a_d),\qquad
  0<\rho=\max_i|a_i|<1.
 \end{equation}
-For $h_0\neq0$ and $0<\epsilon<1$, we define an $\epsilon$-forgetting time
-using only the unforced contribution, avoiding an unobservable ``noise''
-denominator:
+For an unforced state $h_t=\bar A^t h_0$ and $0<\epsilon<1$, define
 \begin{equation}
- H_\epsilon(h_0)=\min\{t\geq0:\|\bar A^t h_0\|_2
- \leq\epsilon\|h_0\|_2\}.
+ H_\epsilon(h_0)=\min\{t\ge0:\|\bar A^t h_0\|_2
+ \le\epsilon\|h_0\|_2\}.
 \end{equation}
 
-\begin{theorem}[Diagonal forgetting certificate]
-\label{thm:diagonal-forgetting}
+\begin{table}[t]
+\caption{\textbf{The certificate is intentionally local and narrow.} Every
+assumption is necessary to interpret the bound.}
+\label{tab:assumptions}
+\centering\small
+\begin{tabularx}{\columnwidth}{@{}p{.30\columnwidth}Y@{}}
+\toprule
+Assumption & Consequence \\
+\midrule
+Frozen $\bar A$ & one stationary transition, not a full selective trajectory \\
+Diagonal, stable & $\kappa_2(V)=1$ and coordinate-wise equality \\
+Unforced term & certifies decay of prior state, not driven memory \\
+Known slow-mode mass & permits a matching persistence lower bound \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\begin{theorem}[Exact diagonal forgetting certificate]
+\label{thm:forgetting}
 For $h_t=\bar A^t h_0$,
 \begin{equation}
  \|h_t\|_2^2=\sum_i |a_i|^{2t}|h_{0,i}|^2
- \leq \rho^{2t}\|h_0\|_2^2,
+ \le\rho^{2t}\|h_0\|_2^2,
 \end{equation}
-and consequently
+and therefore
 \begin{equation}
- H_\epsilon(h_0)\leq
+ H_\epsilon(h_0)\le
  \left\lceil\frac{\log(1/\epsilon)}{\log(1/\rho)}\right\rceil.
-\label{eq:forgetting-upper}
+\label{eq:certificate}
 \end{equation}
-If $P_\rho$ projects onto coordinates with $|a_i|=\rho$ and
-\begin{equation}
- \alpha=\frac{\|P_\rho h_0\|_2}{\|h_0\|_2}>0,
- \quad \|h_t\|_2\geq\alpha\rho^t\|h_0\|_2,
-\end{equation}
-then persistence is certified along that slow-mode component.  Spectral radius
-alone never guarantees that arbitrary context persists.
+If $P_\rho$ projects onto coordinates with $|a_i|=\rho$
+and $\alpha=\|P_\rho h_0\|_2/\|h_0\|_2>0$, then $\|h_t\|_2\ge\alpha\rho^t\|h_0\|_2$.
 \end{theorem}
 
-The proof is an equality coordinate by coordinate and appears in
-Appendix~\ref{app:diagonal-proof}.  This formulation repairs the legacy
-argument, which inserted an upper bound on $\|\bar A^t h_0\|_2$ into a
-signal-to-noise ratio as though it were a lower bound.  Equation
-\eqref{eq:forgetting-upper} certifies forgetting, not memory capacity.
+The proof is coordinate-wise and appears in Appendix
+\ref{app:diagonal-proof}. Equation \eqref{eq:certificate} is an upper bound on
+forgetting time; it is not a lower bound on remembered task information. If
+$\rho=1-\eta$ and $\eta\rightarrow0^+$, the bound scales as $O(1/\eta)$, but
+the exact logarithmic denominator is used outside that near-critical regime.
+For the selective time-varying system, the unforced contribution is
+$\prod_{s=1}^t\bar A_s h_0$ and is bounded by
+$\prod_s\rho(\bar A_s)\|h_0\|_2$; a single frozen $\rho$ is only a local
+approximation.
 
-\begin{corollary}[Near-critical regime only]
-\label{cor:near-critical}
-If $\rho=1-\eta$ and $\eta\to0^+$, then
-$-\log(1-\eta)=\eta+O(\eta^2)$, so the upper bound in
-\eqref{eq:forgetting-upper} scales as $O(1/\eta)$.  This approximation is
-not used for large collapse.  In particular, for $\rho=0.32$ we use the
-exact denominator $\log(1/0.32)\approx1.1394$, not $\eta=0.68$.
-\end{corollary}
-
-\paragraph{Driven and time-varying systems.}
-For frozen $\bar A$ and an input sequence with total energy
-$\sum_k\|x_k\|_2^2\leq E$, the driven term is bounded by the finite-horizon
-controllability operator; replacing it by
-$\lambda_{\max}(\mathcal W_c)$ requires this energy assumption and is not
-valid merely from a per-token bound.  For the selective diagonal system
-$h_t=\bar A_t h_{t-1}+\bar B_t x_t$, the unforced term is exactly
-$\prod_{s=1}^t\bar A_s h_0$ and satisfies
-\begin{equation}
- \left\|\prod_{s=1}^t\bar A_s h_0\right\|_2
- \leq\left(\prod_{s=1}^t\rho(\bar A_s)\right)\|h_0\|_2.
-\end{equation}
-Every calculation using one frozen $\rho$ is therefore explicitly a local
-stationary approximation, not an identity for the selective LTV system.
-
-\paragraph{Reachability is not proved by continuity.}
-Continuity of $\Delta\mapsto\rho(\exp(\Delta A))$ only describes spectral
-values after a reachable $\Delta$ has been specified.  It does not imply that
-the discrete token-to-$\Delta$ map is injective, surjective, or reaches an
-arbitrary target.  We therefore retract the legacy ``Evasion Existence
-Theorem'' and retain its optimization construction only as a falsifiable
-plausibility hypothesis to be tested experimentally.
-
-\begin{proposition}[Conditional monitor coverage]
-\label{prop:conditional-coverage}
-Suppose an attack crosses a declared threshold,
-$\rho(\bar A_t)\leq\rho_{\min}$, at some observed token.  A monitor that
-computes the diagonal maximum exactly and flags that event detects the attack
-at that token.  Conversely, zero false positives are guaranteed only for a
-benign class with an explicit margin
-$\rho(\bar A_t)>\rho_{\min}$ at every observed token.
+\begin{proposition}[No unconditional radius-only readout certificate]
+\label{prop:impossibility}
+For $d\ge2$, fix any stable diagonal $\bar A$ and nonzero retained state $h$.
+There exist unit-norm readouts $C$ and $C'$ such that $Ch\ne0$, $C'h=0$, and
+the entire transition spectrum---hence every statistic computed only from
+$\bar A$---is identical. Therefore no monitor whose input is only the
+transition spectral radius can unconditionally certify preservation of an
+arbitrary linear readout.
 \end{proposition}
-This proposition is conditional by construction; it makes no claim that all
-effective attacks must cross the threshold and no empirical FPR claim before
-the Phase~3 evaluation.
 
-\paragraph{Exact diagonal Lipschitz constant.}
-Write the continuous generator as
-$A=\operatorname{diag}(-q_1,\ldots,-q_d)$ with $q_i>0$.  On
-$\Delta\in[\Delta_{\min},\Delta_{\max}]\subseteq[0,\infty)$,
-let $q_{\min}=\min_i q_i$.  Then
-\begin{align}
- \rho(e^{\Delta A}) &= e^{-q_{\min}\Delta},\\
- |\rho(e^{\Delta_1 A})-\rho(e^{\Delta_2 A})|
- &\leq L_{\mathrm{diag}}|\Delta_1-\Delta_2|,\\
- L_{\mathrm{diag}} &= q_{\min}e^{-q_{\min}\Delta_{\min}}.
-\end{align}
-The coarse legacy constant
-$\|A\|_2\exp(\Delta_{\max}\|A\|_2)$ ignores the negative diagonal
-structure and is numerically vacuous for the measured checkpoint.  We report
-$\|A\|_2=\max_iq_i$ per layer, but do not call the resulting inverse bound a
-robustness certificate without a measured range for $\Delta_t$.
-
-\section{Threat Model and Attack Construction}
-
-The Phase~2 structural test targets the boundary of
-Proposition~\ref{prop:conditional-coverage}: optimize task loss while
-penalizing any decrease below a benign spectral margin.  For diagonal Mamba,
-changing $\Delta_t$ cannot rotate eigenvectors---they remain coordinate axes.
-The meaningful directional surface is instead the input-dependent
-reachability/readout geometry through $\bar B_t$ and $C_t$.  We therefore call
-the planned test a \emph{directional reachability attack}, with objective
-\begin{equation}
- \max_x\;\mathcal L_{\mathrm{task}}(x)
- -\lambda\sum_t[\rho_{\min}+m-\rho(\bar A_t(x))]_+^2,
-\end{equation}
-and require $N\geq200$ held-out examples when token-level reachability is
-tested in the experimental campaign.
-
-\paragraph{Structural counterexample.}
-We instantiated 1,000 seeded diagonal systems.  In every witness, a unit-norm
-readout $C$ was rotated to be orthogonal to the retained state while $\bar A$
-was held bitwise unchanged.  The remembered scalar output fell by 100\%, but a
-radius-only monitor detected 0/1,000 cases (95\% Wilson upper bound 0.38\%).
-For a matched spectral-collapse control, the monitor detected 1,000/1,000
-cases (95\% Wilson lower bound 99.62\%).  This is a model-level counterexample
-to unconditional completeness, not evidence that an arbitrary readout
-rotation is reachable from discrete tokens in the pinned checkpoint.  The
-latter remains an empirical question for the attack campaign.
+Choose $C=h^\top/\|h\|_2$ and choose a unit vector $C'$ in the nonempty
+orthogonal complement of $h$. Both systems have the same $\bar A$ and radius,
+but opposite readout outcomes. This analytic two-dimensional construction is
+not a claim that arbitrary readout rotations are reachable from discrete
+tokens; it separates \emph{information monitored} from \emph{information
+needed for a universal guarantee}.
 
 \begin{figure*}[t]
   \centering
   \includegraphics[width=\textwidth]{theory_counterexample.pdf}
-  \caption{Theory and boundary case (RQ1). \textbf{(a)} The exact frozen
-  diagonal certificate grows sharply only near $\rho=1$; it is an upper bound
-  on forgetting, not a lower bound on retained task information.
-  \textbf{(b)} Both constructed families erase the measured readout in all
-  1,000 systems, but the radius monitor detects every matched spectral collapse
-  and none of the directional-readout counterexamples (Wilson intervals shown).
-  This disproves unconditional completeness without asserting token-level
-  reachability.}
+  \caption{\textbf{Spectral radius certifies contraction, not arbitrary task
+  preservation.} (a) The exact frozen-diagonal forgetting bound grows sharply
+  near $\rho=1$. (b) In two dimensions, the transition and its radius remain
+  fixed while an orthogonal readout erases the measured output. (c) Across
+  1,000 seeded systems, a radius monitor detects every matched radius collapse
+  and none of the readout-rotation witnesses; Wilson intervals are shown.}
   \label{fig:theory}
 \end{figure*}
 
-\section{SpectralGuard Defense}
+The constructive test holds $\bar A$ bitwise fixed, rotates a unit-norm readout
+orthogonal to the retained state, and repeats this operation over 1,000 seeded
+diagonal systems. The output falls by 100\% in every witness, while the monitor
+detects 0/1,000 (95\% Wilson upper bound 0.38\%). A matched transition-collapse
+control is detected in 1,000/1,000 (lower bound 99.62\%).
 
-For every observed token and Mamba layer, SpectralGuard extracts the maximum
-magnitude of the diagonal discretized transition and summarizes the resulting
-layer-wise trajectory. The frozen detector uses 64 summary features and a
-deterministic logistic regression fit on calibration data. Validation data
-selects its decision threshold; test labels are never used for feature,
-classifier, or threshold selection. This detector tests whether spectral
-dynamics contain useful signal. It is not presented as a deployable
-defense or as a complete detector.
+\begin{table}[t]
+\caption{\textbf{Claim boundary for RQ1.} The distinction prevents a local
+linear-systems fact from becoming an unsupported security guarantee.}
+\label{tab:claim-boundary}
+\centering\small
+\begin{tabularx}{\columnwidth}{@{}YY@{}}
+\toprule
+Supported & Not supported \\
+\midrule
+Exact frozen-diagonal decay bound & Full selective-system memory certificate \\
+Conditional detection after a declared radius crossing & Every effective attack must cross that threshold \\
+Radius-only readout impossibility & Token reachability of every constructed witness \\
+Predictive association & Causal or sufficient explanation of correctness \\
+\bottomrule
+\end{tabularx}
+\end{table}
 
-We evaluate two response policies. Algorithm~2 is fail closed: one alert
-blocks a session. Algorithm~2b is a graduated $k$-of-$w$ rule selected on
-validation sessions. Both use the same frozen detector. This separation lets
-us distinguish representation quality, threshold calibration, and operational
-policy. It also prevents an availability improvement from being obtained by
-refitting the detector on held-out sessions.
+\answerbox{RQ1}{For frozen diagonal transitions, radius exactly bounds decay of
+the unforced state. It cannot unconditionally certify arbitrary readout or task
+preservation; an analytic $d\ge2$ counterexample and 1,000 constructive systems
+expose that blind spot.}
 
-The 64-dimensional representation contains distributional summaries of the
-per-token layer trajectories, including location, spread, extrema, quantiles,
-and cross-layer aggregation. Features are computed before label access and the
-schema is frozen in the released configuration. Standardization parameters and
-logistic coefficients are estimated on calibration rows only. The validation
-threshold maximizes the prespecified detector objective subject to the frozen
-protocol; it is carried unchanged into all test, transfer, adaptive, and
-session-level cells. Thus later phases stress one fixed decision surface rather
-than quietly replacing a failed monitor.
+\section{Monitor and Experimental Methodology}
+\subsection{Frozen monitor and response policies}
+For each observed token and each of 64 monitored Mamba layers, SpectralGuard
+extracts the maximum magnitude of the diagonal discretized transition. Each
+layer trajectory is reduced to one temporal mean, yielding 64 ordered
+layer-mean radius features. A deterministic logistic
+regression is fit on calibration data; standardization, coefficients, and
+schema are then frozen. Validation data selects the decision threshold. Test
+labels do not select features, coefficients, thresholds, attack parameters, or
+policies.
 
-\section{Experimental Methodology}
+More precisely, for token $t$ and monitored layer $\ell$, let
+$\bar A_{t,\ell}$ denote the input-conditioned discretized transition and
+define the observed radius
+\begin{equation}
+  r_{t,\ell}=\rho(\bar A_{t,\ell})
+  =\max_j |(\bar A_{t,\ell})_{jj}|.
+  \label{eq:observed-radius}
+\end{equation}
+For each of the 64 monitored layers, the trajectory $\{r_{t,\ell}\}_t$ is
+reduced to its temporal mean $x_\ell=T^{-1}\sum_t r_{t,\ell}$. Thus
+$x=(x_0,\ldots,x_{63})\in\mathbb{R}^{64}$, serialized in the exact order
+\texttt{layer\_0\_rho\_mean} through \texttt{layer\_63\_rho\_mean}.
+Calibration fixes a
+standardizer $(\mu,\sigma)$ and a logistic score
+\begin{equation}
+  q(x)=\operatorname{sigmoid}\!\left(
+  b+\theta^\top\frac{x-\mu}{\sigma}\right).
+  \label{eq:frozen-monitor}
+\end{equation}
+The frozen threshold is $\tau=0.458$; an observation alerts when
+$q(x)\ge\tau$. Missing or non-finite telemetry fails closed rather than being
+silently imputed. Equations~\eqref{eq:observed-radius}
+and~\eqref{eq:frozen-monitor} define the complete learned monitor used in every
+test cell; no online update, architecture-specific refit, or post-hoc threshold
+change is permitted.
 
-\paragraph{Data and splits.}
-The protocol covers associative recall, GSM8K, HumanEval, and LongBench
-Qasper. The seven unique checkpoints are Mamba-790M, Mamba-1.4B,
-Mamba-2.8B, Pythia-1.4B, Pythia-2.8B, GPT-2 XL, and Zamba2-2.7B; the latter
-three provide Transformer or hybrid controls rather than spectral-feature
-training targets.
-Prompt identifiers, task labels, and split assignments are frozen before
-fitting. The common detector comparison uses 1,200 calibration, 800
-validation, and 4,000 test rows: 1,000 held-out prompt clusters under clean,
+Two response policies consume the same frozen alerts. \emph{Fail-closed}
+blocks a session after the first alert. \emph{Graduated blocking} triggers only
+after at least $k$ alerts within a window of $w$ observations. The pair
+$(k,w)=(4,4)$ is selected on 60 validation sessions from the grid
+$k\in\{2,3,4\}$, $w\in\{4,8,16\}$ subject to fixed attack-capture constraints.
+It is not tuned on the 320-session test set. Operational evaluation uses
+three-turn sessions, 32-token monitoring windows, and a stride of eight tokens.
+We report both
+session survival and blocked-window rate: the former asks whether a user can
+finish, whereas the latter measures how much work the policy suppresses.
+
+\subsection{Models, tasks, and frozen roles}
+The evaluation uses associative recall, GSM8K, HumanEval, and LongBench Qasper.
+They provide exact-match memory, mathematical reasoning, code generation, and
+long-context question answering. Low clean performance on some task--model
+pairs is reported rather than filtered away; this becomes important when
+interpreting attack success.
+
+\begin{table*}[t]
+\caption{\textbf{Seven checkpoints cover SSM scale, Transformer controls, and
+a hybrid architecture.} Immutable model revisions and checksums are recorded
+in the anonymous artifact; Mamba-130M is only an environment smoke test.}
+\label{tab:models}
+\centering\small
+\begin{tabularx}{\textwidth}{@{}lclYY@{}}
+\toprule
+Checkpoint & Params. & Architecture & Evidence role & Tasks / conditions \\
+\midrule
+Mamba-790M & 0.79B & Mamba & attack source; adaptive test & all four; six conditions \\
+Mamba-1.4B & 1.4B & Mamba & scale transfer & four fixed conditions \\
+Mamba-2.8B & 2.8B & Mamba & confirmatory / sessions & all four; full DURA \\
+Pythia-1.4B & 1.4B & Transformer & size control & task transfer \\
+Pythia-2.8B & 2.8B & Transformer & architecture control & task transfer \\
+GPT-2 XL & 1.5B & Transformer & independent control & clean / benign / HiSPA \\
+Zamba2-2.7B & 2.7B & hybrid & hybrid generalization & task transfer \\
+\bottomrule
+\end{tabularx}
+\end{table*}
+
+\subsection{Splits, comparators, and accounting}
+Prompt identifiers, task labels, and split assignments are frozen before any
+fit. The common detector comparison uses 1,200 calibration, 800 validation,
+and 4,000 held-out rows: 1,000 prompt clusters, each evaluated under clean,
 HiSPA-original, gradient-guided, and adaptive-v2 conditions. No prompt cluster
-crosses split roles. The prescribed seeds are 42, 123, 456, 789, and 2026.
-The deterministic SpectralGuard fit is identical across those seed labels;
-the stochastic XGBoost comparator is refit at every seed.
+crosses split roles. The broader confirmatory campaign contains 19,300 raw rows
+across fixed attacks, task controls, transfer models, and adaptive cells. The
+five prescribed labels are 42, 123, 456, 789, and 2026.
 
-\begin{table}[t]
-\caption{Frozen evidence roles. Counts are rows in the common confirmatory
-detector protocol; session analyses reuse held-out prompt identities but change
-the unit of analysis to a three-turn session.}
-\label{tab:protocol}
-\centering
-\small
-\begin{tabular}{lrl}
+The primary comparator is a CLASP-style BOE+XGBoost implementation using block
+embeddings and block statistics under the same calibration, validation, and
+test roles \cite{lemercier2026clasp}. It is a design-faithful reimplementation,
+not the authors' official pretrained release. We also isolate mean radius,
+layer-wise spectral features, and matched lexical controls. This hierarchy
+tests whether any advantage comes from a scalar, a richer transition
+representation, or a general hidden representation.
+
+\subsection{Metrics and uncertainty}
+Detection uses precision, recall, F1, and ROC-AUC. SpectralGuard is deterministic
+on the fixed data, so repeating its fit under five seed labels does not create
+five independent samples. Its uncertainty is a 2,000-resample prompt-cluster
+bootstrap over the fixed held-out set. XGBoost varies with training seed on
+the same split; we report the mean and a descriptive $t$ interval across the
+five fits. These intervals answer different questions and are never plotted as
+exchangeable error bars.
+
+Task utility uses task-specific score and paired correctness. The v2--v3
+comparison reports a 2,000-resample paired interval and exact McNemar test.
+Multiple exploratory comparisons use Benjamini--Hochberg control
+\cite{benjamini1995fdr}. Session results use empirical survival, hard-block and
+blocked-window rates with session bootstrap intervals. Runtime includes model
+generation and monitoring, not only classifier inference.
+
+Table \ref{tab:ledger} fixes the unit and uncertainty source behind each
+headline before the results are interpreted. Prompt rows, seeded training fits,
+paired prompts, and sessions are not interchangeable samples.
+
+\begin{table*}[t]
+\caption{\textbf{Each headline has a declared held-out unit and uncertainty
+source.} Intervals are interpreted only for the process that generated them.}
+\label{tab:ledger}
+\centering\small
+\begin{tabularx}{\textwidth}{@{}lYYYY@{}}
 \toprule
-Role & Rows & Permitted use \\
+Claim & Held-out unit and $n$ & Fixed before test & Uncertainty source & Main caveat \\
 \midrule
-Calibration & 1,200 & Feature scaling and classifier fit \\
-Validation & 800 & Threshold, attack, and policy selection \\
-Test & 4,000 & One frozen confirmatory evaluation \\
+Spectral F1/ROC-AUC & prompt clusters (1,000 IDs; 4,000 rows) & features, fit, threshold & 2,000 cluster bootstraps & one fixed domain \\
+BOE F1/ROC-AUC & training fits (5 fits; 4,000 rows) & split and feature design & descriptive seed interval & not sampling uncertainty \\
+Adaptive detector & balanced rows (600/access level) & detector and threshold & bootstrap CI & bounded search \\
+Adaptive utility & paired prompts (300) & attacks and scoring & paired bootstrap + McNemar & 13 clean-correct \\
+Availability & three-turn sessions (320/condition) & detector and policy & session bootstrap & synthetic workload \\
+Runtime & sessions (60) & implementation / workload & repeated measured mean & platform-specific \\
 \bottomrule
-\end{tabular}
-\end{table}
+\end{tabularx}
+\end{table*}
 
-\paragraph{Attacks and controls.}
-We retain the published HiSPA trigger as a fixed reference and add
-gradient-guided, detector-aware adaptive-v2, query-only black-box,
-transfer-based, and joint white-box attacks. Query and optimization budgets are
-frozen before the test evaluation. A GPT-2 negative control tests for prompt
-length and likelihood artifacts. Phase~5 evaluates a separately constructed
-adversarial-benign trigger and a matched benign control without refitting the
-detector.
+\section{DURA Evaluation}
+\subsection{RQ2: How much detection signal is present?}
+Table \ref{tab:detectors} reports the common-protocol result. SpectralGuard
+separates the four conditions substantially better than chance: precision
+0.775, recall 0.840, F1~0.806, and ROC-AUC~0.887. Its fixed-test prompt-cluster bootstrap intervals are narrow enough
+to rule out sampling noise as the explanation for the signal. However, the
+BOE+XGBoost comparator is materially stronger: precision 0.960, recall 0.978,
+mean F1~0.969, and ROC-AUC~0.997 over
+five training-seed fits on the same shared split. This is not a tie and not a
+SpectralGuard superiority claim.
 
-The attack ladder intentionally changes attacker knowledge rather than only
-surface wording. Transfer attacks are optimized on a surrogate; query-only
-attacks receive bounded detector decisions; joint white-box attacks
-differentiate through task and detector losses. Restarts, candidate pools, and
-selection budgets are fixed before held-out scoring. The structural
-counterexample is kept separate because it answers an existence question in a
-controlled diagonal system, whereas the token attacks test reachability in
-learned checkpoints. Mixing those two evidentiary roles would overstate both.
-
-\paragraph{Compute and model provenance.}
-Every model load uses an immutable revision SHA, and each run records its seed,
-configuration hash, package versions, model identifier, and model revision.
-The confirmatory campaign evaluated 19,300 rows across seven models and four
-tasks on NVIDIA H100 GPUs. Phase~3 records 26,725.9 recorded GPU-seconds across
-resumable sessions. We do not add incomplete fragments from Phases~4--5 and
-therefore do not report an unsupported total-compute figure. Detector fitting
-uses calibration data, threshold selection uses validation data, and the test
-split is evaluated once. Accuracy intervals are Wilson intervals; paired
-accuracy drops and effect sizes use 2,000 bootstrap resamples. We control the
-three primary paired tests with Benjamini--Hochberg at FDR 0.05 and also report
-paired Wilcoxon tests.
-
-\paragraph{Nonexchangeable uncertainty.}
-For SpectralGuard, we use a 2,000-resample cluster bootstrap over the fixed test
-prompt IDs, carrying all four conditions for a sampled prompt together. This
-is sampling uncertainty on the fixed test set. For the CLASP-style comparator,
-we report a descriptive $t$ interval over five stochastic refits: it is
-seed-to-seed training variation on the same shared split, not independent
-sampling uncertainty. The two interval types are labeled separately and are
-not interpreted as interchangeable error bars.
-
-\section{Results and Analysis}
-
-The repaired GPT-2 control no longer exposes the legacy template artifact: a
-classifier using only input length and prompt negative log-likelihood obtains
-AUC 0.533, below the preregistered 0.65 ceiling. This result removes the basis
-for the earlier categorical SSM-versus-Transformer claim; architecture-level
-conclusions are deferred to the complete analysis.
-
-Task utility is a limiting measurement axis rather than a hidden success
-criterion (Table~\ref{tab:task-utility}). Clean exact-match accuracy is low for
-three tasks, including zero restricted pass@1 on HumanEval. Qasper's token F1
-is nonzero despite near-zero exact match. We therefore interpret paired changes
-within a frozen task and prompt set, never compare raw scores across tasks, and
-do not turn floor-saturated attack cells into evidence of greater attack power.
-
-\begin{table}[t]
-\caption{Task-score coverage aggregated over the confirmatory matrix. Qasper
-uses token F1; the other tasks use exact code, numeric answer, or restricted
-pass@1. This table makes the low clean floors explicit.}
-\label{tab:task-utility}
-\centering
-\small
-\begin{tabular}{lrrrr}
-\toprule
-Task & $N_{clean}$ & Clean & $N_{v3}$ & Adaptive v3 \\
-\midrule
-Assoc. recall & 1,245 & .213 & 75 & .040 \\
-GSM8K & 925 & .013 & 75 & .027 \\
-HumanEval & 525 & .000 & 75 & .000 \\
-Qasper (token F1) & 605 & .099 & 75 & .089 \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-Under one calibration/validation/test protocol, the multilayer SpectralGuard
-detector obtains F1 0.806 and AUC 0.887 (Table~\ref{tab:detectors}). The same
-fixed data and deterministic logistic fit produce identical values across the
-five seed labels. Its intervals therefore come from the cluster bootstrap over
-the fixed test prompt IDs, not from those duplicated fits. A CLASP-style
-BOE+XGBoost reimplementation using the published design and hyperparameters,
-but not official pretrained weights, obtains mean F1 0.969 and AUC 0.997. Its
-interval describes seed-to-seed training variation on the same shared split,
-not independent sampling uncertainty. We make no detector-superiority claim.
-
-\begin{table}[t]
-\caption{Common-protocol detector results. SG intervals are 95\% cluster
-bootstrap CIs over fixed test prompt IDs; comparator intervals are descriptive
-95\% $t$ intervals over five training seeds. They quantify different sources
-of variation.}
+\begin{table*}[t]
+\caption{\textbf{Representation dominates transition telemetry on the shared
+split.} SpectralGuard intervals bootstrap fixed test clusters; comparator
+intervals describe five training seeds on the same split, not sampling error.}
 \label{tab:detectors}
-\centering
-\small
-\begin{tabular}{lcc}
+\centering\small
+\begin{tabularx}{\textwidth}{@{}lYccccY@{}}
 \toprule
-Detector & F1 & AUC \\
+Detector & Representation & Precision & Recall & F1 & ROC-AUC & Uncertainty \\
 \midrule
-SpectralGuard & .806 [.795, .818] & .887 [.878, .897] \\
-CLASP-style & .969 [.966, .972] & .997 [.9962, .9968] \\
+SpectralGuard & 64 layer-mean radius features & 0.775 & 0.840 & 0.806 [0.795,0.818] & 0.887 [0.878,0.897] & 2,000 cluster bootstraps; $n=4{,}000$ \\
+\rowcolor{SGGreen}CLASP-style comparator & BOE + block statistics & 0.960 & 0.978 & 0.969 [0.966,0.972] & 0.997 [0.996,0.997] & five fits; SD(F1)=0.0027; $n=4{,}000$ \\
 \bottomrule
-\end{tabular}
-\end{table}
+\end{tabularx}
+\end{table*}
 
-Adaptive v2 and detector-aware v3 remain statistically indistinguishable on
-the same 300 prompts: their accuracies are 1.33\% and 1.67\%, respectively
-(paired difference $-0.33$ percentage points, 95\% bootstrap CI
-$[-2.33,1.67]$; McNemar $p=1.0$). Logistic fits of correctness on standardized
-mean spectral radius yield McFadden pseudo-$R^2$ values from 0.0089 to 0.0337,
-indicating weak explanatory power for radius alone. The legacy Mamba-2.8B sign
-reversal does not recur: clean-minus-perturbed $\Delta\rho$ is positive for
-benign, HiSPA-original, and gradient-guided comparisons. Cross-model transfer
-is reported with $N=200$ and Wilson intervals for every model and condition.
+Mean radius alone is also a weak explanation of correctness. Across clean,
+benign-control, gradient-guided, and HiSPA-original rows, logistic McFadden
+pseudo-$R^2$ ranges from 0.0089 to 0.0337. Some slopes are statistically
+nonzero because $n=1{,}000$ per condition; effect magnitude, not only $p$ value,
+determines the interpretation. Layer-wise structure carries useful signal that
+the scalar discards, while BOE features carry more than either spectral view.
 
 \begin{table}[t]
-\caption{Adaptive task accuracy on the same 300 prompts. The comparison is
-in a floor-saturated regime; failure to distinguish the attacks is not evidence of equal
-power.}
-\label{tab:adaptive}
-\centering
-\small
-\begin{tabular}{lcc}
+\caption{\textbf{Mean radius has small explanatory effect sizes.} Each row has
+$n=1{,}000$; $\beta$ is the univariate logistic coefficient.}
+\label{tab:radius-ablation}
+\centering\small
+\begin{tabularx}{\columnwidth}{@{}lcccc@{}}
 \toprule
-Attack & Correct & Accuracy \\
+Condition & Pearson $r$ & $\beta$ & $p$ & pseudo-$R^2$ \\
 \midrule
-Adaptive v2 & 4/300 & 1.33\% \\
-Detector-aware v3 & 5/300 & 1.67\% \\
+Clean & 0.0977 & 0.386 & 0.0022 & 0.0167 \\
+Benign control & 0.0916 & 0.421 & 0.0042 & 0.0186 \\
+Gradient-guided & 0.1236 & 0.576 & $<0.001$ & 0.0337 \\
+HiSPA-original & 0.0595 & 0.286 & 0.0608 & 0.0089 \\
 \bottomrule
-\end{tabular}
+\end{tabularx}
 \end{table}
-
-The Phase~4 escalation confirms that the conclusion is not an artifact of one
-adaptive recipe. Under the frozen detector, black-box transfer, query-only,
-and joint white-box attacks yield F1 0.810, 0.786, and 0.746, respectively;
-their AUCs are 0.905, 0.863, and 0.829. The joint white-box cell is the
-prespecified worst-case endpoint. These values show degradation under stronger
-attacker knowledge, while remaining detector metrics rather than guarantees of
-preserved task utility.
-
-Attack success has an additional denominator constraint. Only 13/300 prompts
-in each Phase~4 cell are clean-correct, so conditional success is 13/13 for
-transfer and query-only and 11/13 for joint white-box, but absolute success is
-4.33\%, 4.33\%, and 3.67\% over all 300 prompts. We report the conditional and
-absolute denominators together. The conditional values characterize failures
-among initially solvable prompts; they do not support a population-wide attack
-rate when clean coverage is 4.33\%.
-
-Figure~\ref{fig:detection} places the three inferentially distinct findings
-side by side. SpectralGuard's cluster-bootstrap interval and the comparator's
-five stochastic refits are deliberately shown with different marks: the former
-captures prompt-sampling uncertainty on one fixed test set, while the latter
-captures training-seed variation on that same split. Detector quality then
-degrades monotonically as attacker access increases. Yet attacked-task
-accuracy is already at the floor, so the small paired difference between v2
-and v3 cannot be interpreted as a security improvement.
 
 \begin{figure*}[t]
   \centering
   \includegraphics[width=\textwidth]{detection_adaptation.pdf}
-  \caption{Detection and adaptation (RQ2--RQ3). \textbf{(a)} Nonexchangeable
-  uncertainty sources are not presented as equivalent error bars: SpectralGuard
-  shows a fixed-test prompt-cluster bootstrap interval; the CLASP-style marks
-  are five training-seed fits on the same split. \textbf{(b)} Frozen-detector
-  F1 and AUC decline under transfer, query-only, and joint white-box attackers.
-  \textbf{(c)} Detector-aware v3 does not restore task utility relative to v2;
-  both accuracies are floor-saturated.}
+  \caption{\textbf{Detection degrades under stronger access while utility stays
+  near its clean floor.} (a) Bootstrap and training-seed uncertainty are shown
+  separately. (b) F1 and ROC-AUC decline monotonically. (c) Detector-aware v3
+  does not recover task accuracy.}
   \label{fig:detection}
 \end{figure*}
 
-\section{Adaptive Threat Model}
+\answerbox{RQ2}{Layer-wise transition spectra contain reproducible held-out
+detection signal (F1 0.806, ROC-AUC 0.887), but a BOE+XGBoost comparator is decisively
+stronger under the same split (mean F1 0.969, ROC-AUC 0.997). Radius is useful
+telemetry, not a sufficient representation.}
 
-We consider four attacker knowledge levels. The reference attacker knows the
-model family and published trigger but not the detector. The gradient-guided
-attacker optimizes task loss through the victim model. The query-only attacker
-observes bounded detector decisions without gradients, and the joint
-white-box attacker differentiates through both task and detector objectives.
-Transfer attacks are generated on a surrogate and evaluated without target
-model updates. All cells preserve fixed prompt sets, query budgets, attack
-restart counts, and selection rules. Candidate selection occurs on validation
-data; test results are not used to tune attack hyperparameters.
+\subsection{RQ3: Does detection survive adaptive attack?}
+The adaptive ladder holds the detector fit and threshold fixed. A transfer
+attack produces F1~0.810 and ROC-AUC~0.905. Query-only optimization reduces these
+to 0.786 and 0.863 within the 256-query cap. Joint white-box optimization
+reduces them further to 0.746 and 0.829. The monotonic pattern is more
+informative than any isolated score: attacker knowledge erodes separability
+without exploiting threshold refits or test-label access.
 
-This protocol follows the principle that robustness claims must survive an
-adaptive adversary rather than only a fixed attack \cite{athalye2018obfuscated}.
-It still does not cover arbitrary token budgets, unrestricted finetuning,
-weight-space attacks, or service-specific side channels. Consequently, the
-joint white-box result is a strong bounded stress test, not a universal
-worst-case certificate.
+\begin{table*}[t]
+\caption{\textbf{Adaptive access erodes the frozen detector.} Intervals use 600
+balanced detector rows per rung; ASR is reported both conditionally on the 13
+clean-correct prompts and absolutely over all 300 prompts.}
+\label{tab:adaptive}
+\centering\small
+\begin{tabularx}{\textwidth}{@{}lYYccccc@{}}
+\toprule
+Attacker & Defense access & Budget & F1 (95\% CI) & ROC-AUC (95\% CI) & Clean correct & Conditional ASR & Absolute ASR \\
+\midrule
+Transfer & no target queries & fixed surrogate & 0.810 [0.774,0.842] & 0.905 [0.880,0.927] & 13/300 & 13/13 & 13/300 \\
+Query-only & detector outcomes & 144; cap 256 & 0.786 [0.748,0.821] & 0.863 [0.834,0.890] & 13/300 & 13/13 & 13/300 \\
+\rowcolor{SGOrange}Joint white-box & task + detector gradient & 3 restarts; $\lambda=0.25,1,2$ & 0.746 [0.704,0.785] & 0.829 [0.795,0.861] & 13/300 & 11/13 & 11/300 \\
+\bottomrule
+\end{tabularx}
+\end{table*}
 
-\section{Availability and Denial-of-Service Analysis}
+Only 13 of 300 prompts are answered correctly before these attacks. Reporting
+100\% conditional attack success for transfer and query-only access without the
+13-prompt denominator would be misleading. Absolute attack success is 4.33\%
+for both and 3.67\% for joint white-box access. The experiment establishes
+adaptive detector degradation, not broad task robustness.
 
-We evaluated availability at the session level rather than treating a
-per-window false-positive rate as sufficient.  The frozen single-alert policy
-(Algorithm~2) hard-blocked all 320 clean three-turn test sessions.  A
-validation-only search selected the graduated $k$-of-$w$ policy
-($k=4,w=4$), which retained a 100\% hard-block rate on the frozen malicious
-white-box condition.  On held-out clean sessions, however, survival increased
-only to 8/320 (2.5\%, bootstrap 95\% CI [0.94\%, 4.38\%]).  Matched benign
-controls and adversarial-benign prompts both yielded 0/320 surviving sessions.
-The clean blocked-window rate fell from 98.74\% to 73.24\%, but monitoring
-increased measured runtime by 328.53\% (4.29$\times$ total latency) over 60
-validation sessions.  Thus the graduated response is directionally better than
-the fail-closed baseline while remaining operationally unusable under this
-frozen detector.  We report this as a negative availability result and make no
-claim that Algorithm~2b resolves defense-induced denial of service.
+The paired v2--v3 task comparison reaches 4/300 (1.33\%) versus 5/300 (1.67\%)
+correct. The paired difference is $-0.33$ percentage points with 95\% bootstrap
+CI $[-2.33,1.67]$ and McNemar $p=1.0$. Per-task scores expose the floor:
+HumanEval is zero in both conditions; associative recall is 0.040 in both;
+GSM8K is 0.013 versus 0.027; and Qasper token F1 is 0.093 versus 0.089.
 
 \begin{table}[t]
-\caption{Held-out three-turn session availability ($N=320$ per condition).}
-\label{tab:availability}
-\centering
-\small
-\begin{tabular}{lcc}
+\caption{\textbf{Task-level scores expose the clean floor without implying a
+paired clean comparison.} Parentheses give evaluated prompts; each task uses
+its native metric. The broad clean campaign is not paired with the 75-prompt
+adaptive subsets; v2 and v3 are paired with each other.}
+\label{tab:utility}
+\centering\small
+\begin{tabularx}{\columnwidth}{@{}Yrrr@{}}
 \toprule
-Policy & Clean survival & Malicious block \\
+Task & Broad clean & Adaptive v2 & Adaptive v3 \\
 \midrule
-Fail closed (Alg.~2) & 0/320 (0\%) & 320/320 (100\%) \\
-Graduated (Alg.~2b) & 8/320 (2.5\%) & 320/320 (100\%) \\
+Associative recall & 0.213 (1,245) & 0.040 (75) & 0.040 (75) \\
+GSM8K exact match & 0.013 (925) & 0.013 (75) & 0.027 (75) \\
+HumanEval pass & 0.000 (525) & 0.000 (75) & 0.000 (75) \\
+Qasper token F1 & 0.099 (605) & 0.093 (75) & 0.089 (75) \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsubsection{Cross-architecture task-side controls.}
+The frozen campaign also tests task outcomes on Mamba, Transformer, and hybrid
+checkpoints without pooling them into the spectral detector result. Table
+\ref{tab:transfer} shows heterogeneous, condition-specific behavior from low
+clean baselines. It neither supports an architecture resistance ranking nor
+rescues a detector claim through selective checkpoint reporting.
+
+\begin{table}[t]
+\caption{\textbf{Task accuracy varies by architecture and attack.} Each cell
+has 200 prompts; C, H, and G denote clean, HiSPA, and gradient-guided.}
+\label{tab:transfer}
+\centering\small
+\begin{tabularx}{\columnwidth}{@{}lccc@{}}
+\toprule
+Checkpoint & C & H & G \\
+\midrule
+Mamba-1.4B & 0.070 & 0.060 & 0.090 \\
+Mamba-2.8B & 0.050 & 0.020 & 0.035 \\
+Pythia-1.4B & 0.105 & 0.050 & 0.105 \\
+Zamba2-2.7B & 0.073 & 0.103 & 0.037 \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+These controls broaden failure analysis rather than the detector's training
+domain. Zamba2 rises by 0.030 under HiSPA but drops by 0.037 under the
+gradient-guided condition; Pythia drops by 0.055 under HiSPA but not under the
+gradient-guided condition. Full Wilson and paired intervals are in the
+artifact. Architecture labels alone do not explain the outcome.
+
+\answerbox{RQ3}{No. The frozen detector degrades monotonically as attacker
+access grows, reaching F1 0.746 under joint white-box optimization. Meanwhile,
+attacked task accuracy is 1.67\% and statistically indistinguishable from the
+preceding 1.33\% floor. Detection signal does not imply preserved utility.}
+
+\subsection{RQ4: Can the monitor support benign sessions?}
+\begin{figure*}[t]
+  \centering
+  \includegraphics[width=\textwidth]{availability_cost.pdf}
+  \caption{\textbf{Graduated blocking changes degree, not conclusion.} (a) Only
+  8/320 clean sessions survive. (b) Blocked-window rates remain 73--99\%.
+  (c) Monitoring costs 0.104 versus 0.024 seconds per session.}
+  \label{fig:availability}
+\end{figure*}
+
+\begin{table}[t]
+\caption{\textbf{Both policies deny almost all service.} Entries report
+surviving sessions / blocked-window rate over 320 held-out sessions.}
+\label{tab:availability}
+\centering\small
+\begin{tabularx}{\columnwidth}{@{}lcc@{}}
+\toprule
+Condition & Fail-closed & Graduated \\
+\midrule
+\rowcolor{SGPale}Clean & 0/320 / 98.74\% & 8/320 / 73.24\% \\
+Matched benign & 0/320 / 98.97\% & 0/320 / 82.22\% \\
+Adversarial benign & 0/320 / 98.98\% & 0/320 / 82.41\% \\
+Malicious white-box & 0/320 / 98.98\% & 0/320 / 82.41\% \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+The availability test creates 320 held-out three-turn sessions per condition:
+clean, matched benign control, adversarial benign, and malicious white-box. The
+original fail-closed policy blocks all 320 clean sessions. The selected
+graduated rule improves clean survival to 8/320, or 2.5\% (95\% session
+bootstrap CI $[0.94,4.38]$), while hard-blocking all malicious sessions. This
+is a numerical improvement but still an unusable service point.
+
+The rule is not selected after observing test failures. On 60 validation
+sessions, every tested point preserves 100\% attack hard-blocking; clean
+survival therefore selects $(k,w)=(4,4)$ at 6.67\% (Table
+\ref{tab:policy-grid}). Its held-out fall to 2.5\% shows that the feasible
+policy frontier, not merely one threshold, is inadequate.
+
+\begin{table}[t]
+\caption{\textbf{Validation offers no acceptable policy point.} Entries are
+clean session survival; all cells hard-block 100\% of validation attacks.}
+\label{tab:policy-grid}
+\centering\small
+\begin{tabular}{@{}lccc@{}}
+\toprule
+ & $w=4$ & $w=8$ & $w=16$ \\
+\midrule
+$k=2$ & 0.00\% & 0.00\% & 0.00\% \\
+$k=3$ & 1.67\% & 1.67\% & 1.67\% \\
+$k=4$ & \cellcolor{SGGreen}\textbf{6.67\%} & 5.00\% & 3.33\% \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-Figure~\ref{fig:availability} exposes why per-window detector metrics are an
-insufficient deployment endpoint. The graduated policy reduces the fraction of
-blocked clean windows by 25.50 percentage points relative to fail closed, but
-overlapping alerts across turns still terminate 97.5\% of clean sessions. The
-matched benign and adversarial-benign conditions both have zero survival,
-showing that the response layer has not learned a usable semantic boundary.
-The 4.29$\times$ latency ratio is measured end to end on the same 60 validation
-sessions; it is a system cost, not a GPU-throughput extrapolation.
+The failure is not confined to hard blocks. Under the graduated policy,
+73.24\% of clean windows, 82.22\% of matched-benign windows, and 82.41\% of
+adversarial-benign windows are blocked. Matched and optimized benign controls
+both have 0/320 surviving sessions. The policy is therefore not rescuing
+availability by merely delaying a few correct blocks; the alert stream remains
+saturated across benign interaction.
 
-\begin{figure*}[t]
-  \centering
-  \includegraphics[width=\textwidth]{availability_cost.pdf}
-  \caption{Availability and cost (RQ4). \textbf{(a)} The fail-closed policy
-  permits no held-out session to survive; graduation admits only 8/320 clean
-  sessions and none in the other conditions (95\% intervals shown).
-  \textbf{(b)} Window-level blocking remains saturated despite graduation.
-  \textbf{(c)} Monitoring increases measured end-to-end session latency from
-  0.0243 to 0.1041 seconds. High malicious blocking therefore coexists with
-  unacceptable benign availability and cost.}
-  \label{fig:availability}
-\end{figure*}
+End-to-end monitored runtime is 0.104 seconds per session versus 0.024 seconds
+for the baseline, a 4.29$\times$ ratio (+328.5\%) with peak allocated VRAM of
+13.18 GiB. The absolute time is platform-specific; the ratio describes this
+implementation and workload, not a universal deployment cost. Figure
+\ref{fig:availability} presents survival, blocked windows, and cost together so
+that attack capture cannot visually hide benign denial of service.
+
+\answerbox{RQ4}{No. Fail-closed denies all clean sessions; the selected
+graduated policy allows only 8/320 and blocks 73.24\% of clean windows while
+incurring 4.29$\times$ latency. Perfect malicious blocking is achieved at an
+unacceptable benign availability point.}
+
+\FloatBarrier
 
 \section{Discussion}
+\subsection{What the DURA matrix changes}
+If evaluation stopped at RQ2, SpectralGuard would look promising: F1~0.806 and
+ROC-AUC~0.887 are real held-out signal. The remaining axes reverse the deployment
+conclusion. A stronger representation reaches F1~0.969, adaptive access lowers
+the spectral detector to F1~0.746, task accuracy remains near zero, and the
+response policy blocks nearly every benign session. DURA does not average
+these outcomes into a composite score because such an average would permit a
+strong detector to compensate numerically for denial of service. Instead, it
+exposes a vector of claims whose deployment acceptability must be specified in
+advance.
 
-\paragraph{A hierarchy of evidence.}
-The study supports four claims of decreasing scope. First, the frozen diagonal
-calculation is an exact mathematical certificate of forgetting. Second, the
-counterexample establishes that radius-only detection is incomplete outside a
-declared coverage condition. Third, held-out experiments show that richer
-spectral summaries contain predictive attack signal. Fourth, the bounded
-adaptive and session experiments show that this signal is not sufficient for
-a robust, usable response policy. None of the empirical layers upgrades the
-preceding theorem into a universal claim, and none of the detector metrics
-overrides observed task or availability failure.
+The result is not that spectral monitoring is useless. Transition telemetry is
+cheap to define, mechanistically interpretable in the frozen diagonal case,
+and predictively useful. It may complement richer representations, support
+diagnosis, or act as one feature in a calibrated ensemble. The result is that
+it cannot carry the full semantic burden assigned to ``defense.'' The theory
+shows why: contraction is only one property of the state-to-output computation.
+The experiments show how the missing dimensions become concrete under
+representation comparison, adaptive optimization, and response policy.
 
-\paragraph{Why a weaker detector result is still informative.}
-The common-protocol comparison rejects the strongest version of our initial
-hypothesis: spectral summaries are not the best tested representation for
-detecting these attacks. That negative result narrows the design space. Block
-output embeddings retain directions and interactions that scalar transition
-magnitudes discard, consistent with the constructive readout counterexample.
-At the same time, the comparator result is internal: it uses a faithful design
-reimplementation, not official released weights, and it shares our frozen
-split. The defensible conclusion is therefore representational---radius and
-its summaries omit relevant geometry---rather than a leaderboard claim about
-all implementations.
+\subsection{Design implications}
+First, future monitors should combine transition, reachability, and readout
+information rather than search for a universal scalar. BOE performance suggests
+that richer internal representations contain discriminative signal unavailable
+to radius alone. Second, task-preserving recovery deserves separate design
+attention. Blocking after detection may prevent continuation, but it does not
+restore a corrupted recurrent state. State reset, checkpointed rollback, or
+selective recomputation could turn detection into recovery, provided their own
+utility and cost are measured. Third, policies need explicit service-level
+constraints. A validation objective that preserves attack capture but allows
+6.67\% clean survival on validation can still collapse to 2.5\% on test; this
+is a warning that the feasible region itself may be unacceptable.
 
-\paragraph{Implications for defense design.}
-A successor should combine transition dynamics with directional state or
-readout information, calibrate uncertainty on benign multi-turn traffic, and
-optimize the response policy jointly for security and availability. Selective
-abstention or deferred review may be preferable to hard blocking when the
-detector is poorly calibrated. Most importantly, evaluation should declare a
-utility floor and an availability budget before attack selection. Otherwise a
-detector can appear robust precisely when the victim task and benign service
-are already unusable.
+\subsection{How to interpret the comparator}
+The CLASP-style result is a common-protocol comparator, not a leaderboard claim
+against the official CLASP release. We reproduce the published design elements
+with BOEs, block statistics, and XGBoost, while holding our split and test
+conditions fixed. This isolates representation quality within our campaign.
+It does not establish that our implementation, corpus, attacks, or hyperparameters
+are identical to the authors'. Conversely, its strong result is still a valid
+negative finding for SpectralGuard: under the protocol we control, a richer
+representation separates the same held-out rows much better.
 
-\paragraph{Reproducibility as a result constraint.}
-Every number in the manuscript maps to compact tracked evidence with frozen
-split roles, hashes, seeds, and model revisions. Checkpointed GPU stages can be
-resumed without recomputing completed rows, while final summaries are rebuilt
-on CPU. This discipline was not merely operational: it exposed duplicated
-deterministic seed labels, a template artifact in the negative control, and
-the difference between prompt-level and session-level uncertainty before those
-could become claims.
+\subsection{Acceptance criteria and negative results}
+The four DURA axes are deliberately not interchangeable. A monitor may pass a
+discrimination criterion while failing task preservation or availability; a
+low-latency policy may still be unusable if its benign blocking rate is high.
+Accordingly, we do not declare a global pass from an average, rank, or composite
+score. A deployment claim would require, at minimum, a threshold selected
+without test labels, resilience to the strongest declared attacker, useful
+clean and attacked task performance, and a response point compatible with an
+explicit service-level constraint. SpectralGuard does not meet that joint bar
+in this campaign.
+
+This interpretation also prevents three common denominator errors. First,
+conditional ASR is meaningful only where the clean answer is correct; it cannot
+be generalized from 13 eligible prompts to all 300 adaptive prompts. Second,
+perfect malicious-session blocking is not a security success when nearly all
+benign sessions are denied as well. Third, a narrow bootstrap interval around
+F1 quantifies uncertainty on the fixed prompt population, not robustness to a
+new attack, model, or workload. These are limitations on the scope of the
+evidence, not reasons to discard the measured signal. The negative deployment
+result is therefore a reproducible outcome of the evaluation criteria rather
+than an absence of experimental evidence.
 
 \section{Limitations}
+\paragraph{Task floors.}
+Clean accuracy is low for several task--model pairs, especially HumanEval and
+GSM8K. We retain those rows to expose the denominator rather than select only
+successful prompts. The consequence is equally important: the campaign cannot
+estimate robust task utility in regions where the base model rarely succeeds.
+Future work needs stronger task-matched checkpoints and larger clean-correct
+subsets before making conditional attack-success claims.
 
-The forgetting theorem is exact only for a frozen diagonal transition.  The
-product bound covers time variation but can be loose.  Conditional monitor
-coverage does not establish that spectral collapse is necessary for task
-failure.  The structural counterexample proves that a radius-only monitor is
-incomplete outside its stated assumption, while not proving token-level
-reachability in the learned model.
-The confirmatory detector result is also weaker than the CLASP-style
-reimplementation under the common protocol. The latter is a reimplementation,
-not an evaluation of official pretrained CLASP weights. Low task accuracies on
-several exact-answer cells limit behavioral interpretation, and the five
-SpectralGuard seed labels do not create data-split independence because the
-underlying split and deterministic estimator are fixed.
-The availability sessions are deterministic compositions of held-out benchmark
-prompts rather than live user traffic.  More importantly, the frozen detector
-is nearly saturated on clean session windows: graduation improves survival only
-marginally and does not distinguish the crafted benign condition from its
-matched control.  Deployment therefore requires recalibration on a disjoint
-session distribution or a different decision statistic; neither is evaluated
-post hoc here.
+\paragraph{Synthetic sessions.}
+The three-turn sessions provide a controlled unit for response-policy stress
+testing, not a production traffic model. They cannot estimate a production
+false-block rate, analyst workload, or user abandonment. Real traffic, longer
+histories, prevalence shifts, and operator studies are necessary before any
+deployment claim. The present result is narrower: the tested policies fail even
+under this controlled benign workload.
 
-The seven evaluated checkpoints do not cover all selective SSMs, hybrid
-architectures, quantization regimes, context lengths, or serving stacks.
-Exact-answer task scores are conservative and several attacked cells are
-floor-saturated. Bootstrap intervals quantify sampling variation for the
-frozen prompt pool, not distribution shift. Query and optimization budgets
-bound the tested adversary; larger budgets could worsen results. Finally,
-synthetic three-turn sessions cannot estimate a production false-block rate.
-They function as a controlled stress test that reveals failure, not as a
-deployment forecast.
+\paragraph{Architecture and access.}
+The theory applies exactly to frozen diagonal transitions and bounds only the
+unforced state contribution. Selective time variation, driven inputs, hybrid
+attention paths, quantization, and alternative SSM parameterizations require
+separate analysis. The adaptive attacks are strong within declared budgets but
+do not constitute exhaustive search or certified worst cases.
+
+\paragraph{Uncertainty and generalization.}
+The SpectralGuard bootstrap describes sampling uncertainty on one fixed test
+set; the comparator interval describes seed-to-seed training variation on that
+same split, not independent sampling uncertainty. Neither establishes
+population-level generalization across domains.
+The five seed labels attached to a deterministic fit are not independent
+replicates. Cross-model controls broaden failure analysis but do not transform
+the common-protocol Mamba result into a universal statement.
 
 \section{Conclusion}
-Spectral monitoring is informative, but detection is not defense. For frozen
-diagonal transitions, spectral radius certifies an upper bound on forgetting;
-it does not certify arbitrary memory persistence or readout integrity. In our
-experiments, richer layer-wise spectral features detect many poisoned states,
-yet a CLASP-style embedding comparator is stronger on the shared split,
-detector-aware attacks preserve catastrophic task failure, and both frozen
-response policies impose unacceptable clean-session denial of service. The
-appropriate conclusion is therefore methodological rather than architectural:
-hidden-state-poisoning defenses should be evaluated jointly on detection,
-attacked-task utility, adaptive evasion, and operational availability. A
-deployable defense will require a statistic and calibration regime that improve
-all four, not merely aggregate F1 or AUC.
+We evaluated spectral monitoring for hidden-state poisoning as a defense claim,
+not only a classification task. The resulting DURA methodology separates four
+questions that aggregate detector scores conflate. Spectral radius provides an
+exact frozen-diagonal forgetting certificate, yet a simple readout construction
+proves that it cannot unconditionally certify task preservation. In held-out
+experiments, layer-wise spectral features provide genuine detection signal but
+trail a representation-based comparator. Stronger attacker access erodes the
+frozen detector, attacked-task utility remains at the floor, and both tested
+response policies nearly eliminate benign availability. The central lesson is
+therefore constructive: internal monitoring should be judged by what it
+detects, what behavior survives, how it responds to adaptation, and whether a
+user can still complete a session. Detection is evidence; defense is the joint
+claim.
 
 \bibliographystyle{ACM-Reference-Format}
 \bibliography{references}
 
 \appendix
-\section{Diagonal Forgetting Proof}
-\label{app:diagonal-proof}
-Because $\bar A$ is diagonal,
-$\bar A^t h_0=(a_1^th_{0,1},\ldots,a_d^th_{0,d})$, hence
-\begin{equation}
- \|\bar A^t h_0\|_2^2
- =\sum_i|a_i|^{2t}|h_{0,i}|^2
- \leq\rho^{2t}\|h_0\|_2^2.
-\end{equation}
-The right-hand side is at most $\epsilon^2\|h_0\|_2^2$ whenever
-\begin{equation}
- t\geq\frac{\log(1/\epsilon)}{\log(1/\rho)},
-\end{equation}
-proving the upper bound after taking the ceiling.  On the dominant coordinate
-set, $\|\bar A^tP_\rho h_0\|_2=\rho^t\|P_\rho h_0\|_2$; orthogonality of diagonal
-coordinates gives the stated lower bound.  No controllability or noise
-assumption is used.
+\begin{table*}[t]
+\caption{\textbf{Anonymous artifact map.} Paths are relative to the repository
+root; each verifier checks provenance, schema, completeness, and claim-specific
+acceptance gates.}
+\label{tab:artifact-map}
+\centering\small
+\begin{tabularx}{\textwidth}{@{}lYY@{}}
+\toprule
+Contribution & Evidence exposed to reviewers & Verification entry point \\
+\midrule
+Theory boundary & \texttt{results/theory/} constructive rows and audit manifests & \texttt{scripts/verify\_phase2\_results.py} \\
+Detection and utility & \texttt{results/phase3/} frozen fits, raw summaries, intervals, and provenance & \texttt{scripts/verify\_phase3\_results.py} \\
+Adaptive robustness & \texttt{results/phase4/} attacks, budgets, detector checksum, and summaries & \texttt{scripts/verify\_phase4\_results.py} \\
+Availability and cost & \texttt{results/phase5/} sessions, policies, runtime, and acceptance manifest & \texttt{scripts/verify\_phase5\_results.py} \\
+Paper figures and claims & \texttt{paper/}, \texttt{results/foundation/}, and vector-figure source hashes & \texttt{scripts/verify\_phase8\_manuscript.py} \\
+\bottomrule
+\end{tabularx}
+\end{table*}
 
-\section{Legacy Horizon Arithmetic Audit}
-The legacy pair $H(0.98)=1.17\times10^6$ and $H(0.32)=45$ cannot arise from
-one formula $H(\rho)=C/\log(1/\rho)$ with fixed constants.  The implied
-numerators are approximately $2.36\times10^4$ and $51.3$, respectively, a
-factor above $460$.  Holding the first numerator fixed predicts about
-$2.07\times10^4$ at $\rho=0.32$, not 45.  We therefore remove both values as
-theoretical predictions; any future empirical horizon will be labeled and
-measured directly.  The machine-readable arithmetic and layerwise norms are
-generated by the Phase~2 theory-audit script.
+\section{Proof of Theorem \ref{thm:forgetting}}
+\label{app:diagonal-proof}
+For diagonal $\bar A$,
+\[
+ \bar A^t h_0=(a_1^t h_{0,1},\ldots,a_d^t h_{0,d})^\top.
+\]
+Taking the squared Euclidean norm yields
+\[
+ \|\bar A^t h_0\|_2^2=\sum_i|a_i|^{2t}|h_{0,i}|^2
+ \le\rho^{2t}\sum_i|h_{0,i}|^2.
+\]
+Thus $\|\bar A^t h_0\|_2\le\rho^t\|h_0\|_2$. Requiring
+$\rho^t\le\epsilon$ and using $0<\rho<1$ gives
+$t\ge\log(1/\epsilon)/\log(1/\rho)$ and the integer ceiling in
+Equation \eqref{eq:certificate}. If $P_\rho$ selects coordinates attaining
+$\rho$, then their contribution alone has norm
+$\rho^t\|P_\rho h_0\|_2=\alpha\rho^t\|h_0\|_2$, proving the lower bound.
+
+\section{Supplementary Empirical Results}
+\subsection{Adaptive denominators by task}
+The 300-prompt adaptive set is balanced across four tasks. All 13 clean-correct
+prompts occur in associative recall; GSM8K, HumanEval, and Qasper contribute no
+clean-correct prompt to conditional attack success. Table
+\ref{tab:adaptive-denominator} makes that support explicit. Conditional ASR is
+undefined, not zero, when the clean-correct denominator is empty.
+
+\begin{table}[t]
+\caption{\textbf{The adaptive ASR denominator comes entirely from one task.}
+Each row has 75 prompts. A dash denotes an undefined conditional rate.}
+\label{tab:adaptive-denominator}
+\centering\small
+\begin{tabularx}{\columnwidth}{@{}Yrrr@{}}
+\toprule
+Task & Clean correct & Transfer/query & Joint WB \\
+\midrule
+Associative recall & 13 & 13/13 (100\%) & 11/13 (84.6\%) \\
+GSM8K & 0 & -- & -- \\
+HumanEval & 0 & -- & -- \\
+Qasper & 0 & -- & -- \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+This accounting explains why the main text reports both 100\% conditional and
+4.33\% absolute success for transfer and query access. The former describes
+the subset on which degradation is possible under exact correctness; the
+latter describes the full experimental unit. Neither is complete alone.
+
+\subsection{Attack construction and budgets}
+All token attacks use an eight-token insertion budget. Transfer, query-only,
+joint white-box, and adversarial-benign searches differ in declared access,
+steps, candidates, and restarts; the query attack has a hard 256-query cap and
+joint white-box evaluates $\lambda\in\{0.25,1,2\}$. Exact grids and realized
+budgets are machine-readable in the anonymous artifact. These are empirical
+searches, not certificates or equal-compute comparisons.
+
+\section{Reproducibility and Exact Accounting}
+All model identifiers and immutable revision hashes are recorded in the
+artifact configuration. Deterministic seeds, prompt IDs, split roles, attack
+budgets, thresholds, policy grids, and statistical resample counts are machine
+readable. The confirmatory archive contains 19,300 raw rows; its integrity
+manifest verifies 80 internal entries and 21,660 JSONL rows across confirmatory
+and supporting outputs. The recorded confirmatory GPU time is 26,725.9 seconds
+(7.42 hours). Separate adaptive and availability campaigns were executed in
+resumable sessions; fragmented provider wall-clock records are not summed into
+an unverifiable total. Every paper figure is regenerated from tracked CSV or
+YAML evidence into vector PDF, and the figure manifest records source and
+output SHA-256 hashes.
+
+The common split contains 1,200 calibration, 800 validation, and 4,000 test
+rows. Adaptive detection uses 600 balanced rows per access level. Task-side
+adaptive comparisons use 300 paired prompts. Availability uses 60 validation
+and 320 held-out sessions per condition, with three turns per session. Runtime
+uses 60 sessions. No final-test labels select a representation, classifier,
+threshold, attacker hyperparameter, or response policy.
 
 \section{Open Science}
-The linked \href{https://anonymous.4open.science/r/spectralguardaisec26/}{anonymous
-review artifact} contains the
-frozen configurations, split manifests, model revisions, seeds, experiment
-runners, statistical analysis, tests, compact result tables, and clean
-notebooks required to reproduce the paper's core claims. It records the exact
-feature schema and the distinction between cluster-bootstrap intervals and
-seed-to-seed descriptive intervals. Model weights and public benchmark data
-are retrieved from their original providers at pinned identifiers; caches are
-excluded. Credentials, machine-local state, raw multi-gigabyte downloads, and
-author-identifying material are not included. Every published table is derived
-from tracked compact evidence, and artifact checks reject absolute local paths,
-dirty notebook outputs, unfrozen model revisions, and duplicate split roles.
+The submission artifact is available at
+\url{https://anonymous.4open.science/r/spectralguardaisec26/}. It enumerates
+all files needed to evaluate the core claims:
+frozen configurations, prompt and split identifiers, raw and summarized
+outputs, detector parameters, attack manifests, analysis code, figure
+generation, and environment requirements. Each results bundle contains an
+internal checksum manifest. Large public model weights and benchmark datasets
+are referenced by immutable identifiers rather than redistributed. When an
+artifact cannot be shared because of third-party licensing, the artifact lists
+the source, revision, and reconstruction command. No institutional credential
+or private data is required.
+
+\subsection{Reviewer reproduction path}
+The CPU-only evidence audit validates hashes and split leakage, recomputes
+reported statistics from released rows, and regenerates every table and vector
+figure without model downloads. Full reproduction instead materializes pinned
+public assets and replays resumable GPU cells. Claim-specific verifiers reject
+missing or duplicate rows, non-finite metrics, incomplete restarts, changed
+detector fits, or checksum mismatches; interrupted notebooks export a validated
+handoff and resume only missing cells.
+
+\subsection{Audit boundary}
+The machine-readable artifact retains the exact prompt construction, native
+task scorers, generation limits, attack grids, query budgets, checkpoint rules,
+and statistical estimands omitted here for space. Its gates enforce disjoint
+prompt clusters; complete restart and condition matrices; unchanged frozen
+detector hashes; 32-token monitoring windows with a stride of eight tokens; and
+2,000 resamples at the correct unit (prompt cluster, paired prompt, or session).
+The five comparator seeds characterize training variation on one shared split,
+whereas SpectralGuard's interval is a cluster bootstrap over its fixed test set.
 
 \section{Ethical Considerations}
-\paragraph{Scope, stakeholders, and oversight.}
-This study evaluates publicly downloadable model checkpoints, public benchmark
-questions, and synthetic multi-turn sessions on researcher-controlled
-hardware.  It does not recruit human participants, interact with users,
-inspect private or personal data, send traffic to live services, or test
-operator-controlled deployments.  It is therefore not human-subjects research
-and did not require institutional review board or ethics review board
-(IRB/ERB) approval.  That determination does not replace substantive ethical
-analysis.  The stakeholders considered are users of state-space language
-models, model and defense developers, researchers who may reproduce or extend
-the attacks, model providers, and the broader public affected by unreliable or
-unavailable language-model services.  The analysis follows the Menlo
-principles of beneficence, respect for persons, justice, and respect for law
-and public interest \cite{bailey2012menlo}.
+The experiments use public benchmarks and public model checkpoints; no human
+subjects or private user conversations are included. The work studies attacks
+that could induce denial of service. Its defensive benefit is diagnostic: exposing when
+detection coexists with task failure or benign blocking. Its dual-use risk is
+monitor evasion or deliberate false alarms. We mitigate that risk with bounded
+public checkpoints and declared budgets, and release no credential, private
+trace, live endpoint, or automation against a deployed service. This follows
+the Menlo principles of beneficence and respect for law and public interest
+\cite{bailey2012menlo}.
 
-\paragraph{Risks, safeguards, and publication decision.}
-The principal dual-use risk is that adaptive trigger-generation and
-detector-evasion procedures could lower the effort required to disrupt an SSM
-deployment.  A second risk, demonstrated directly by the experiments, is that
-an over-sensitive defense can itself deny service to benign users.  The study
-limits those harms by operating only on public checkpoints and offline
-benchmarks; freezing bounded query and optimization budgets; excluding
-credentials, service endpoints, malware, persistence, and deployment-specific
-exploit automation; reporting clean-input coverage and availability alongside
-attack success; and publishing negative results and scope limitations rather
-than implying production readiness.  These measures do not eliminate misuse:
-the attack logic remains transferable in principle.  Publication is warranted
-because defenders and affected model developers gain reproducible evidence
-that high token-level detection scores do not establish safe system-level
-availability, while the released attacks add bounded evaluations to a
-vulnerability class that is already public.  On balance, that diagnostic and
-defensive benefit outweighs the residual incremental risk under the stated
-safeguards.
+No human participant, private data, live target, live vulnerability, or undisclosed
+vendor flaw was studied; no IRB/ERB or vendor-specific disclosure process was
+applicable. Findings concern controlled sessions, not a product.
+Future product validation should require authorization, minimize user impact,
+and coordinate disclosure before publishing exploit details.
 
-\subsection{Responsible Disclosure and Release}
-HiSPA already publicly disclosed hidden-state poisoning against Mamba-family
-models \cite{lemercier2026hispa}.  This work did not probe a live product or
-identify a private, operator-specific vulnerability, so there was no affected
-service operator to notify before conducting the study.  The submission does
-not claim a coordinated or delayed disclosure that did not occur.
-
-The anonymous review artifact releases the defense, evaluation pipeline,
-frozen configurations, compact evidence, and the bounded attack
-implementations needed to verify the paper under the repository's MIT license.
-It omits model-weight caches, credentials, machine-local state, and any
-production targeting.  Because the attack code needed for reproducibility is
-already present in the anonymous artifact, it is not described as embargoed.
-If future work uncovers a previously non-public vulnerability in a live
-service, the intended policy is to notify the responsible operator privately,
-allow a reasonable mitigation window, and only then release details whose
-defensive value justifies the remaining risk.  After review, the artifact will
-be preserved at a stable archival location; acceptance would trigger
-de-anonymization and replacement of the review URL with that permanent record.
-
-\section*{Generative AI Usage Statement}
-Generative AI tools were used for methodological critique, code assistance,
-statistical cross-checking, literature-query formulation, and language editing.
-The authors inspected and revised all generated material, executed the
-experiments, verified every reported value against the released evidence, and
-take full responsibility for the paper's claims, code, and citations. No
-generative AI system is listed as an author.
+\section{Generative AI Usage Statement}
+OpenAI Codex/ChatGPT and Anthropic Claude assisted with source-code review,
+experiment orchestration, figure and table generation, language editing, and
+manuscript consistency checks. Reported results come exclusively from frozen
+experimental outputs and deterministic analysis scripts; these tools did not
+fabricate data, references, model outputs, or experiments. Every mathematical
+claim, citation, configuration, result, and generated visual was checked by the
+human authors against the tracked evidence. The human authors retain full
+responsibility for the design, execution, interpretation, originality, and
+submitted text.
 
 \end{document}

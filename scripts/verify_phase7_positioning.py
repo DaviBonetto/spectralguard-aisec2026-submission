@@ -18,11 +18,11 @@ LITERATURE = ROOT / "results" / "foundation" / "phase7_literature_audit.json"
 def main() -> None:
     tex = TEX.read_text(encoding="utf-8")
     normalized = " ".join(tex.split())
-    assert r"\title{Detection Is Not Defense: Stress-Testing Spectral Monitoring for Hidden-State Poisoning}" in tex
+    assert r"\title{Detection Is Not Defense: A DURA Evaluation of Spectral Monitoring for Hidden-State Poisoning}" in tex
     for marker in (
         r"\section{Introduction}",
-        r"\section{SpectralGuard Defense}",
-        r"\section{Adaptive Threat Model}",
+        r"\section{Threat Model and DURA Questions}",
+        r"\section{DURA Evaluation}",
         r"\section{Conclusion}",
         r"\label{tab:detectors}",
         r"\label{tab:adaptive}",
@@ -30,13 +30,13 @@ def main() -> None:
     ):
         assert marker in tex, marker
     required = (
-        "cluster bootstrap over the fixed test prompt IDs",
-        "seed-to-seed training variation on the same shared split",
+        "prompt-cluster bootstrap over the fixed held-out set",
+        "seed-to-seed training variation on that same split",
         "not independent sampling uncertainty",
-        "floor-saturated regime",
-        "make no detector-superiority claim",
+        "task accuracy remains near zero",
+        "not a SpectralGuard superiority claim",
         "no general priority claim",
-        "26,725.9 recorded GPU-seconds",
+        "26,725.9 seconds",
     )
     for phrase in required:
         assert phrase in normalized, phrase
