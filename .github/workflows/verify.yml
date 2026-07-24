@@ -20,4 +20,4 @@ jobs:
       - name: Lint
         run: uv run ruff check .
       - name: Verify artifact
-        run: uv run pytest -q
+        run: uv run python -m pytest -q
